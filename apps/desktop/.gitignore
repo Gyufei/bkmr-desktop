@@ -3,9 +3,9 @@ src-tauri/target/
 src-tauri/.cargo/
 
 # Node.js
-bkmr-desktop/node_modules/
-bkmr-desktop/dist/
-bkmr-desktop/.vite/
+node_modules/
+dist/
+.vite/
 
 # macOS
 .DS_Store

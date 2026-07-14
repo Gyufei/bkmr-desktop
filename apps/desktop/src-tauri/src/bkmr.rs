@@ -143,15 +143,21 @@ pub async fn get_tags() -> Result<Vec<BkmrTag>, String> {
 }
 
 /// Add a bookmark via bkmr add. Returns the new bookmark ID.
-pub async fn add_bookmark(url: &str, title: &str, tags: &[String]) -> Result<u64, String> {
+pub async fn add_bookmark(url: &str, title: &str, tags: &[String], description: &str) -> Result<u64, String> {
     let mut cmd = tokio::process::Command::new(bkmr_path());
     cmd.arg("add");
+    cmd.arg("--no-color");
+    cmd.arg("--no-web");
     cmd.arg("--title");
     cmd.arg(title);
+    if !description.is_empty() {
+        cmd.arg("--description");
+        cmd.arg(description);
+    }
+    cmd.arg(url);
     if !tags.is_empty() {
         cmd.arg(tags.join(","));
     }
-    cmd.arg(url);
 
     let output = cmd.output().await.map_err(|e| format!("Failed to run bkmr add: {e}"))?;
     if !output.status.success() {
@@ -163,6 +169,29 @@ pub async fn add_bookmark(url: &str, title: &str, tags: &[String]) -> Result<u64
     let id_str = stdout.split("ID: ").nth(1).and_then(|s| s.trim_end_matches(')').trim().split_whitespace().next());
     id_str.and_then(|s| s.parse().ok())
         .ok_or_else(|| format!("Could not parse bookmark ID from: {stdout}"))
+}
+
+/// Delete bookmarks by IDs. Returns the number of deleted bookmarks.
+pub async fn delete_bookmarks(ids: &[u64]) -> Result<u64, String> {
+    let ids_str = ids.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(",");
+    let mut cmd = tokio::process::Command::new(bkmr_path());
+    cmd.arg("delete");
+    cmd.arg("--no-color");
+    cmd.arg(&ids_str);
+    cmd.stdin(std::process::Stdio::piped());
+
+    let mut child = cmd.spawn().map_err(|e| format!("Failed to run bkmr delete: {e}"))?;
+    // bkmr delete prompts interactively; pipe "y" to confirm
+    if let Some(mut stdin) = child.stdin.take() {
+        use tokio::io::AsyncWriteExt;
+        let _ = stdin.write_all(b"y\n").await;
+    }
+    let output = child.wait_with_output().await.map_err(|e| format!("Failed to run bkmr delete: {e}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("bkmr delete failed: {stderr}"));
+    }
+    Ok(ids.len() as u64)
 }
 
 /// Export all bookmarks as JSON to a file. Returns the file path.
@@ -201,6 +230,52 @@ pub async fn get_all_bookmarks() -> Result<Vec<BkmrBookmark>, String> {
     cmd.args(["search", "--json", "--limit", "50000"]);
     run_bkmr(cmd).await
 }
+
+/// Check if a bookmark exists with the exact URL.
+pub async fn check_bookmark(url: &str) -> Result<Option<BkmrBookmark>, String> {
+    let bookmarks = get_all_bookmarks().await?;
+    Ok(bookmarks.into_iter().find(|b| b.url == url))
+}
+
+/// Show a single bookmark by ID.
+pub async fn show_bookmark(id: u64) -> Result<Option<BkmrBookmark>, String> {
+    let mut cmd = tokio::process::Command::new(bkmr_path());
+    cmd.args(["show", "--json", "--no-color", &id.to_string()]);
+    let output = cmd.output().await.map_err(|e| format!("Failed to run bkmr show: {e}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("bkmr show failed: {stderr}"));
+    }
+    let raw: Vec<BkmrBookmarkRaw> = serde_json::from_slice(&output.stdout)
+        .map_err(|e| format!("Failed to parse bkmr output: {e}"))?;
+    Ok(raw.into_iter().next().map(Into::into))
+}
+
+/// Update a bookmark's title and tags (overwrite mode with --force).
+pub async fn update_bookmark(id: u64, title: &str, tags: &[String], description: &str) -> Result<(), String> {
+    let mut cmd = tokio::process::Command::new(bkmr_path());
+    cmd.arg("update");
+    cmd.arg("--no-color");
+    cmd.arg(id.to_string());
+    cmd.arg("--title");
+    cmd.arg(title);
+    if !description.is_empty() {
+        cmd.arg("--description");
+        cmd.arg(description);
+    }
+    if !tags.is_empty() {
+        cmd.arg("--force");
+        cmd.arg("--tags");
+        cmd.arg(tags.join(","));
+    }
+    let output = cmd.output().await.map_err(|e| format!("Failed to run bkmr update: {e}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("bkmr update failed: {stderr}"));
+    }
+    Ok(())
+}
+
 
 async fn run_bkmr(mut cmd: tokio::process::Command) -> Result<Vec<BkmrBookmark>, String> {
     let output = cmd.output().await.map_err(|e| format!("Failed to run bkmr: {e}"))?;

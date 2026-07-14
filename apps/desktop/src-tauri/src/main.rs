@@ -6,9 +6,10 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .setup(|_app| {
+        .setup(|app| {
+            let handle = app.handle().clone();
             tauri::async_runtime::spawn(
-                bkmr_desktop_lib::http_server::start_server(shutdown_rx)
+                bkmr_desktop_lib::http_server::start_server(handle, shutdown_rx)
             );
             Ok(())
         })
@@ -17,6 +18,11 @@ fn main() {
             bkmr_desktop_lib::commands::search_bookmarks,
             bkmr_desktop_lib::commands::get_all_tags,
             bkmr_desktop_lib::commands::backup_bookmarks,
+            bkmr_desktop_lib::commands::add_bookmark,
+            bkmr_desktop_lib::commands::delete_bookmarks,
+            bkmr_desktop_lib::commands::check_bookmark,
+            bkmr_desktop_lib::commands::show_bookmark,
+            bkmr_desktop_lib::commands::update_bookmark,
             bkmr_desktop_lib::commands::scan_notes,
             bkmr_desktop_lib::commands::read_note_file,
             bkmr_desktop_lib::commands::write_note_file,

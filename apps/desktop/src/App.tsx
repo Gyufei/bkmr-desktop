@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import Fuse from "fuse.js";
 import { useBkmr } from "./hooks/useBkmr";
 import { useNotes } from "./hooks/useNotes";
@@ -10,6 +11,9 @@ import ResultList from "./components/ResultList";
 import NotesPanel from "./components/NotesPanel";
 import SettingsPage from "./components/SettingsPage";
 import type { Bookmark } from "./types";
+import { Plus } from "lucide-react";
+import AddBookmarkDialog from "./components/AddBookmarkDialog";
+import { Button } from "./components/ui/button";
 
 const TABS = [
   { id: "bookmarks", label: "书签" },
@@ -24,7 +28,7 @@ const LOAD_MORE = 50;
 export default function App() {
   const {
     allBookmarks, loading, error,
-    loadAll, fetchTags, backup,
+    loadAll, fetchTags, backup, addBookmark, deleteBookmarks,
   } = useBkmr();
 
   const notes = useNotes();
@@ -36,18 +40,20 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [displayCount, setDisplayCount] = useState(INITIAL_LOAD);
   const [serverRunning, setServerRunning] = useState(false);
+  const [tagVersion, setTagVersion] = useState(0);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     invoke<{ running: boolean }>("get_server_status")
       .then((s) => setServerRunning(s.running))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Load settings on startup
   useEffect(() => {
     settings.load().then((s) => {
       if (s.backup_dir) {
-        backup(s.backup_dir).catch(() => {});
+        backup(s.backup_dir).catch(() => { });
       }
     });
   }, []);
@@ -55,7 +61,7 @@ export default function App() {
   // Auto-scan notes when settings has a notes_dir
   useEffect(() => {
     if (settings.settings.notes_dir && notes.notes.length === 0) {
-      notes.scanDir(settings.settings.notes_dir).catch(() => {});
+      notes.scanDir(settings.settings.notes_dir).catch(() => { });
     }
   }, [settings.settings.notes_dir]);
 
@@ -64,20 +70,29 @@ export default function App() {
     loadAll();
   }, [loadAll]);
 
+  // Reload bookmarks when notified by HTTP server (Chrome extension add/update)
+  useEffect(() => {
+    const unlisten = listen("bookmarks-changed", () => {
+      loadAll();
+      setTagVersion(v => v + 1);
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, [loadAll, setTagVersion]);
+
   // Build Fuse.js index when allBookmarks changes
   const fuseRef = useRef<Fuse<Bookmark> | null>(null);
   useEffect(() => {
     fuseRef.current = allBookmarks.length > 0
       ? new Fuse(allBookmarks, {
-          keys: [
-            { name: "title", weight: 0.5 },
-            { name: "url", weight: 0.2 },
-            { name: "tags", weight: 0.2 },
-            { name: "description", weight: 0.1 },
-          ],
-          threshold: 0.4,
-          includeScore: true,
-        })
+        keys: [
+          { name: "title", weight: 0.5 },
+          { name: "url", weight: 0.2 },
+          { name: "tags", weight: 0.2 },
+          { name: "description", weight: 0.1 },
+        ],
+        threshold: 0.4,
+        includeScore: true,
+      })
       : null;
   }, [allBookmarks]);
 
@@ -129,6 +144,18 @@ export default function App() {
     setShowSettings((v) => !v);
   }, []);
 
+  const handleAddBookmark = useCallback(async (url: string, title: string, tags: string[], description?: string) => {
+    await addBookmark(url, title, tags, description);
+    await loadAll();
+    setTagVersion(v => v + 1);
+  }, [addBookmark, loadAll, setTagVersion]);
+
+  const handleDeleteBookmark = useCallback(async (id: number) => {
+    await deleteBookmarks([id]);
+    await loadAll();
+    setTagVersion(v => v + 1);
+  }, [deleteBookmarks, loadAll, setTagVersion]);
+
   return (
     <div className="h-screen flex flex-col bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary">
       {/* Tab bar */}
@@ -137,17 +164,16 @@ export default function App() {
           {/* Tab pills */}
           <div className="inline-flex items-center gap-1 rounded-lg bg-surface-sidebar dark:bg-surface-dark-sidebar p-1">
             {TABS.map((tab) => (
-              <button
+              <Button variant="ghost" size="sm"
                 key={tab.id}
                 onClick={() => switchTab(tab.id)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === tab.id && !showSettings
-                    ? "bg-white dark:bg-[#3f3f46] text-accent dark:text-accent-dark shadow-sm"
-                    : "text-text-secondary dark:text-text-dark-secondary hover:text-text-primary dark:hover:text-text-dark-primary"
-                }`}
+                className={`px-3 py-1.5 h-auto rounded-md transition-all ${activeTab === tab.id && !showSettings
+                  ? "bg-white dark:bg-[#3f3f46] text-accent dark:text-accent-dark shadow-sm"
+                  : "text-text-secondary dark:text-text-dark-secondary hover:text-text-primary dark:hover:text-text-dark-primary"
+                  }`}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -166,19 +192,16 @@ export default function App() {
           )}
         </div>
 
-        <button
+
+        <Button variant="ghost" size="icon-sm"
           onClick={toggleSettings}
-          className={`flex items-center justify-center w-7 h-7 rounded-md transition-colors ${
-            showSettings
-              ? "text-accent dark:text-accent-dark bg-accent/10 dark:bg-accent-dark/10"
-              : "text-text-secondary dark:text-text-dark-secondary hover:text-text-primary dark:hover:text-text-dark-primary hover:bg-accent-bg dark:hover:bg-accent-dark-bg"
-          }`}
+          className={`${showSettings ? "text-accent dark:text-accent-dark bg-accent/10 dark:bg-accent-dark/10" : ""}`}
           title="设置"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Content area */}
@@ -191,11 +214,16 @@ export default function App() {
       ) : activeTab === "bookmarks" ? (
         <>
           <div className="shrink-0 px-4 py-3 border-b border-border dark:border-border-dark">
-            <SearchBar onSearch={handleSearch} loading={loading} />
+            <div className="flex items-center gap-2">
+              <SearchBar onSearch={handleSearch} loading={loading} />
+              <Button variant="outline" className="h-10 w-10 shrink-0 !px-0 flex items-center justify-center" onClick={() => setShowAddDialog(true)} title="添加书签">
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
           <div className="flex-1 flex overflow-hidden">
             <aside className="w-56 shrink-0 border-r border-border dark:border-border-dark bg-surface-sidebar dark:bg-surface-dark-sidebar p-3 flex flex-col">
-              <TagPanel
+              <TagPanel key={tagVersion}
                 fetchTags={fetchTags}
                 selectedTags={selectedTags}
                 onTagsChange={handleTagsChange}
@@ -209,6 +237,7 @@ export default function App() {
                   error={error}
                   hasMore={hasMore}
                   onLoadMore={handleLoadMore}
+                  onDeleteBookmark={handleDeleteBookmark}
                 />
               </div>
             </main>
@@ -230,8 +259,8 @@ export default function App() {
           <div className="flex-1 flex items-center justify-center text-text-secondary dark:text-text-dark-secondary">
             <div className="text-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-40">
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                <polyline points="14 2 14 8 20 8"/>
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
               </svg>
               <div className="text-base font-medium mb-1">未设置笔记目录</div>
               <div className="text-sm opacity-60">请点击右上角齿轮⚙打开设置</div>
@@ -239,6 +268,12 @@ export default function App() {
           </div>
         )
       )}
+
+      <AddBookmarkDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onAdd={handleAddBookmark}
+      />
     </div>
   );
 }

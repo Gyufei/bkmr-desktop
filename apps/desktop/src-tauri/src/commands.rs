@@ -30,6 +30,16 @@ pub async fn backup_bookmarks(dir: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn add_bookmark(url: String, title: String, tags: Vec<String>, description: Option<String>) -> Result<u64, String> {
+    bkmr::add_bookmark(&url, &title, &tags, &description.unwrap_or_default()).await
+}
+
+#[tauri::command]
+pub async fn delete_bookmarks(ids: Vec<u64>) -> Result<u64, String> {
+    bkmr::delete_bookmarks(&ids).await
+}
+
+#[tauri::command]
 pub async fn scan_notes(dir: String) -> Result<Vec<crate::notes::NoteFile>, String> {
     crate::notes::scan_notes(&dir)
 }
@@ -62,4 +72,19 @@ pub async fn update_settings(settings: crate::settings::Settings) -> Result<(), 
 #[tauri::command]
 pub async fn get_server_status() -> Result<crate::http_server::ServerStatus, String> {
     Ok(crate::http_server::status())
+}
+
+#[tauri::command]
+pub async fn check_bookmark(url: String) -> Result<Option<bkmr::BkmrBookmark>, String> {
+    bkmr::check_bookmark(&url).await
+}
+
+#[tauri::command]
+pub async fn show_bookmark(id: u64) -> Result<Option<bkmr::BkmrBookmark>, String> {
+    bkmr::show_bookmark(id).await
+}
+
+#[tauri::command]
+pub async fn update_bookmark(id: u64, title: String, tags: Vec<String>, description: Option<String>) -> Result<(), String> {
+    bkmr::update_bookmark(id, &title, &tags, &description.unwrap_or_default()).await
 }

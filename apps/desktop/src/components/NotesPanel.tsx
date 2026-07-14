@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 import { tagColor } from "../utils/tagColor";
 import FolderTree, { type FolderNode } from "./FolderTree";
 import NoteEditor from "./NoteEditor";
@@ -15,7 +17,6 @@ interface Props {
   error: string | null;
 }
 
-
 function formatTime(unix: number): string {
   const d = new Date(unix * 1000);
   const now = new Date();
@@ -27,11 +28,9 @@ function formatTime(unix: number): string {
 
 function buildFolderTree(notes: NoteFile[]): FolderNode[] {
   const rootMap = new Map<string, FolderNode>();
-
   for (const note of notes) {
     const parts = note.relative_path.split("/");
     if (parts.length <= 1) continue;
-
     let currentPath = "";
     for (let i = 0; i < parts.length - 1; i++) {
       const parentPath = currentPath;
@@ -53,11 +52,9 @@ function buildFolderTree(notes: NoteFile[]): FolderNode[] {
       }
     }
   }
-
   for (const node of rootMap.values()) {
     node.children.sort((a, b) => a.name.localeCompare(b.name));
   }
-
   return Array.from(rootMap.values()).filter((n) => !n.path.includes("/"));
 }
 
@@ -152,26 +149,27 @@ export default function NotesPanel({
         <div className="w-56 shrink-0 border-r border-border dark:border-border-dark flex flex-col">
           <div className="shrink-0 px-3 pt-3 pb-2">
             <div className="flex items-center gap-1">
-              <input
+              <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索笔记..."
-                className="flex-1 px-2.5 py-1.5 text-xs rounded-md border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary outline-none focus:border-accent dark:focus:border-accent-dark transition-colors"
+                className="flex-1 h-7 px-2.5 text-xs rounded-md"
               />
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => {
                   setNewFileName("");
                   setNewFileError(null);
                   setShowNewModal(true);
                 }}
-                className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-text-secondary dark:text-text-dark-secondary hover:text-text-primary dark:hover:text-text-dark-primary hover:bg-accent-bg dark:hover:bg-accent-dark-bg transition-colors"
                 title="新建笔记"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14"/><path d="M12 5v14"/>
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto thin-scrollbar">
@@ -248,13 +246,12 @@ export default function NotesPanel({
             <h3 className="text-sm font-semibold text-text-primary dark:text-text-dark-primary mb-3">
               新建笔记
             </h3>
-            <input
+            <Input
               type="text"
               value={newFileName}
               onChange={(e) => { setNewFileName(e.target.value); setNewFileError(null); }}
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               placeholder="输入文件名（无需 .md）"
-              className="w-full h-9 px-3 text-sm rounded-input border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors"
               autoFocus
             />
             {newFileError && (
@@ -263,18 +260,20 @@ export default function NotesPanel({
               </div>
             )}
             <div className="flex justify-end gap-2 mt-4">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowNewModal(false)}
-                className="px-3 h-8 text-xs font-medium rounded-btn border border-border dark:border-border-dark text-text-primary dark:text-text-dark-primary hover:bg-accent-bg dark:hover:bg-accent-dark-bg transition-colors"
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleCreate}
-                className="px-3 h-8 text-xs font-medium rounded-btn bg-accent text-white hover:opacity-90 transition-opacity"
               >
                 确定
-              </button>
+              </Button>
             </div>
           </div>
         </div>

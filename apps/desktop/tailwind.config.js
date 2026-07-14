@@ -48,6 +48,30 @@ export default {
         input: "8px",
         modal: "12px",
       },
+      keyframes: {
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "fade-out": {
+          from: { opacity: "1" },
+          to: { opacity: "0" },
+        },
+        "zoom-in": {
+          from: { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
+          to: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
+        "zoom-out": {
+          from: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+          to: { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 0.2s ease-out",
+        "fade-out": "fade-out 0.2s ease-in",
+        "zoom-in": "zoom-in 0.2s ease-out",
+        "zoom-out": "zoom-out 0.2s ease-in",
+      },
     },
   },
   plugins: [],

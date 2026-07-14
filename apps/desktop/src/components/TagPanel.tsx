@@ -1,17 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
+import { Button } from "./ui/button";
 import { tagColor } from "../utils/tagColor";
 import type { Tag } from "../types";
-
 interface Props {
   fetchTags: () => Promise<Tag[]>;
   selectedTags: string[];
   onTagsChange: (tags: string[]) => void;
 }
-
 export default function TagPanel({ fetchTags, selectedTags, onTagsChange }: Props) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     setLoading(true);
     fetchTags().then((result) => {
@@ -19,7 +17,6 @@ export default function TagPanel({ fetchTags, selectedTags, onTagsChange }: Prop
       setLoading(false);
     });
   }, [fetchTags]);
-
   const toggleTag = useCallback((name: string) => {
     onTagsChange(
       selectedTags.includes(name)
@@ -27,23 +24,16 @@ export default function TagPanel({ fetchTags, selectedTags, onTagsChange }: Prop
         : [...selectedTags, name]
     );
   }, [selectedTags, onTagsChange]);
-
-  const selectAll = useCallback(() => {
-    onTagsChange(tags.map((t) => t.name));
-  }, [tags, onTagsChange]);
-
   const clearAll = useCallback(() => {
     onTagsChange([]);
   }, [onTagsChange]);
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">标签筛选</span>
         {tags.length > 0 && (
-          <div className="flex gap-2 text-xs">
-            <button onClick={selectAll} className="text-accent dark:text-accent-dark hover:underline">全选</button>
-            <button onClick={clearAll} className="text-text-secondary dark:text-text-dark-secondary hover:underline">清除</button>
+          <div className="flex gap-1 text-xs justify-end">
+            <Button variant="ghost" className="p-0 h-auto text-xs text-text-secondary dark:text-text-dark-secondary" onClick={clearAll}>清除</Button>
           </div>
         )}
       </div>

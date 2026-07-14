@@ -1,4 +1,7 @@
 import { useState, useCallback } from "react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
 import type { AppSettings } from "../hooks/useSettings";
 
 interface Props {
@@ -54,37 +57,36 @@ export default function SettingsPage({ settings, onSave, onBackupNow }: Props) {
           <h3 className="text-sm font-medium text-text-primary dark:text-text-dark-primary mb-3">书签备份</h3>
           <div className="space-y-3 p-4 rounded-card bg-surface-sidebar dark:bg-surface-dark-sidebar">
             <div>
-              <label className="block text-xs font-medium text-text-secondary dark:text-text-dark-secondary mb-1.5">
+              <Label className="block text-xs font-medium text-text-secondary dark:text-text-dark-secondary mb-1.5">
                 备份目录路径
-              </label>
+              </Label>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={backupDir}
                   onChange={(e) => setBackupDir(e.target.value)}
                   placeholder="留空则不自动备份"
-                  className="flex-1 h-9 px-3 text-sm rounded-input border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors"
                 />
-                <button
+                <Button
                   onClick={handleBackupSave}
                   disabled={backupSaving}
-                  className="px-4 h-9 text-sm font-medium rounded-btn bg-accent text-white hover:bg-accent-hover dark:bg-accent-dark transition-colors disabled:opacity-50"
                 >
                   {backupSaving ? "保存..." : "保存"}
-                </button>
+                </Button>
               </div>
               <p className="text-xs text-text-secondary dark:text-text-dark-secondary mt-1.5">
                 应用启动时自动导出书签到该目录
               </p>
             </div>
             <div>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleBackupNow}
                 disabled={backupLoading || !backupDir}
-                className="px-4 h-8 text-xs font-medium rounded-btn border border-border dark:border-border-dark text-text-primary dark:text-text-dark-primary hover:bg-accent-bg dark:hover:bg-accent-dark-bg transition-colors disabled:opacity-50"
               >
                 {backupLoading ? "备份中..." : "立即备份"}
-              </button>
+              </Button>
               {backupStatus && (
                 <p className="text-xs text-text-secondary dark:text-text-dark-secondary mt-1.5 break-all">
                   {backupStatus}
@@ -98,24 +100,22 @@ export default function SettingsPage({ settings, onSave, onBackupNow }: Props) {
         <section>
           <h3 className="text-sm font-medium text-text-primary dark:text-text-dark-primary mb-3">笔记目录</h3>
           <div className="space-y-3 p-4 rounded-card bg-surface-sidebar dark:bg-surface-dark-sidebar">
-            <label className="block text-xs font-medium text-text-secondary dark:text-text-dark-secondary mb-1.5">
+            <Label className="block text-xs font-medium text-text-secondary dark:text-text-dark-secondary mb-1.5">
               Obsidian vault 路径
-            </label>
+            </Label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={notesDir}
                 onChange={(e) => setNotesDir(e.target.value)}
                 placeholder="输入 Obsidian 笔记目录路径"
-                className="flex-1 h-9 px-3 text-sm rounded-input border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-colors"
               />
-              <button
+              <Button
                 onClick={handleNotesSave}
                 disabled={notesSaving}
-                className="px-4 h-9 text-sm font-medium rounded-btn bg-accent text-white hover:bg-accent-hover dark:bg-accent-dark transition-colors disabled:opacity-50"
               >
                 {notesSaving ? "保存..." : "保存"}
-              </button>
+              </Button>
             </div>
             <p className="text-xs text-text-secondary dark:text-text-dark-secondary">
               保存后切换到"笔记"页签即可浏览目录中的 Markdown 文件

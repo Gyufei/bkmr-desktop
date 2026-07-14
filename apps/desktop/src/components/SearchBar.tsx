@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Input } from "./ui/input";
 
 interface Props {
   onSearch: (query: string) => void;
@@ -18,13 +19,13 @@ export default function SearchBar({ onSearch, loading }: Props) {
   }, [value, onSearch]);
 
   return (
-    <div className="relative">
-      <input
+    <div className="relative flex-1">
+      <Input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="搜索书签..."
-        className="w-full h-10 pl-4 pr-10 text-[15px] font-medium rounded-input border border-border dark:border-border-dark bg-surface-card dark:bg-surface-dark-card text-text-primary dark:text-text-dark-primary placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent dark:focus:ring-accent-dark/30 dark:focus:border-accent-dark transition-colors"
+        className="h-10 pl-4 pr-10 text-[15px] font-medium"
         autoFocus
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 pointer-events-none">
