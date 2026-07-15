@@ -9,6 +9,7 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 
 interface Props {
@@ -83,9 +84,8 @@ export default function AddBookmarkDialog({ open, onOpenChange, onAdd }: Props) 
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">描述（可选）</Label>
-            <textarea
+            <Textarea
               id="description"
-              className="flex min-h-[60px] w-full rounded-input border border-border dark:border-border-dark bg-background px-3 py-2 text-sm placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
               placeholder="添加备注或描述"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
