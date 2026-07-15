@@ -5,15 +5,12 @@ import Fuse from "fuse.js";
 import { useBkmr } from "./hooks/useBkmr";
 import { useNotes } from "./hooks/useNotes";
 import { useSettings } from "./hooks/useSettings";
-import SearchBar from "./components/SearchBar";
-import TagPanel from "./components/TagPanel";
-import ResultList from "./components/ResultList";
 import NotesPanel from "./components/NotesPanel";
 import SettingsPage from "./components/SettingsPage";
 import type { Bookmark } from "./types";
-import { Plus } from "lucide-react";
 import AddBookmarkDialog from "./components/AddBookmarkDialog";
 import { Button } from "./components/ui/button";
+import BookmarkView from "./components/BookmarkView";
 
 const TABS = [
   { id: "bookmarks", label: "书签" },
@@ -220,38 +217,21 @@ export default function App() {
           onBackupNow={backup}
         />
       ) : activeTab === "bookmarks" ? (
-        <>
-          <div className="shrink-0 px-4 py-3 border-b border-border dark:border-border-dark">
-            <div className="flex items-center gap-2">
-              <SearchBar onSearch={handleSearch} loading={loading} />
-              <Button variant="outline" className="h-10 w-10 shrink-0 !px-0 flex items-center justify-center" onClick={() => setShowAddDialog(true)} title="添加书签">
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-          <div className="flex-1 flex overflow-hidden">
-            <aside className="w-56 shrink-0 border-r border-border dark:border-border-dark bg-surface-sidebar dark:bg-surface-dark-sidebar p-3 flex flex-col">
-              <TagPanel key={tagVersion}
-                fetchTags={fetchTags}
-                selectedTags={selectedTags}
-                onTagsChange={handleTagsChange}
-              />
-            </aside>
-            <main className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-3 thin-scrollbar">
-                <ResultList
-                  bookmarks={visibleBookmarks}
-                  loading={loading}
-                  error={error}
-                  hasMore={hasMore}
-                  onLoadMore={handleLoadMore}
-                  onDeleteBookmark={handleDeleteBookmark}
-                  onUpdateBookmark={updateBookmark}
-                />
-              </div>
-            </main>
-          </div>
-        </>
+        <BookmarkView
+          tagVersion={tagVersion}
+          fetchTags={fetchTags}
+          selectedTags={selectedTags}
+          onTagsChange={handleTagsChange}
+          onSearch={handleSearch}
+          loading={loading}
+          visibleBookmarks={visibleBookmarks}
+          error={error}
+          hasMore={hasMore}
+          onLoadMore={handleLoadMore}
+          onDeleteBookmark={handleDeleteBookmark}
+          onUpdateBookmark={updateBookmark}
+          onOpenAddDialog={() => setShowAddDialog(true)}
+        />
       ) : (
         notesDir ? (
           <NotesPanel
