@@ -6,20 +6,6 @@ pub async fn load_all_bookmarks() -> Result<Vec<bkmr::BkmrBookmark>, String> {
 }
 
 #[tauri::command]
-pub async fn search_bookmarks(
-    query: Option<String>,
-    tags: Vec<String>,
-) -> Result<Vec<bkmr::BkmrBookmark>, String> {
-    match (query, tags.as_slice()) {
-        (Some(q), _) if !q.trim().is_empty() => {
-            bkmr::hsearch(q.trim(), &tags).await
-        }
-        (_, []) => Ok(Vec::new()),
-        _ => bkmr::search_by_tags(&tags).await,
-    }
-}
-
-#[tauri::command]
 pub async fn get_all_tags() -> Result<Vec<bkmr::BkmrTag>, String> {
     bkmr::get_tags().await
 }

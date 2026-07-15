@@ -9,27 +9,26 @@ fn main() {
         .setup(|app| {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(
-                bkmr_desktop_lib::http_server::start_server(handle, shutdown_rx)
+                bkmrx_lib::http_server::start_server(handle, shutdown_rx)
             );
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            bkmr_desktop_lib::commands::load_all_bookmarks,
-            bkmr_desktop_lib::commands::search_bookmarks,
-            bkmr_desktop_lib::commands::get_all_tags,
-            bkmr_desktop_lib::commands::backup_bookmarks,
-            bkmr_desktop_lib::commands::add_bookmark,
-            bkmr_desktop_lib::commands::delete_bookmarks,
-            bkmr_desktop_lib::commands::check_bookmark,
-            bkmr_desktop_lib::commands::show_bookmark,
-            bkmr_desktop_lib::commands::update_bookmark,
-            bkmr_desktop_lib::commands::scan_notes,
-            bkmr_desktop_lib::commands::read_note_file,
-            bkmr_desktop_lib::commands::write_note_file,
-            bkmr_desktop_lib::commands::create_note_file,
-            bkmr_desktop_lib::commands::get_settings,
-            bkmr_desktop_lib::commands::update_settings,
-            bkmr_desktop_lib::commands::get_server_status,
+            bkmrx_lib::commands::load_all_bookmarks,
+            bkmrx_lib::commands::get_all_tags,
+            bkmrx_lib::commands::backup_bookmarks,
+            bkmrx_lib::commands::add_bookmark,
+            bkmrx_lib::commands::delete_bookmarks,
+            bkmrx_lib::commands::check_bookmark,
+            bkmrx_lib::commands::show_bookmark,
+            bkmrx_lib::commands::update_bookmark,
+            bkmrx_lib::commands::scan_notes,
+            bkmrx_lib::commands::read_note_file,
+            bkmrx_lib::commands::write_note_file,
+            bkmrx_lib::commands::create_note_file,
+            bkmrx_lib::commands::get_settings,
+            bkmrx_lib::commands::update_settings,
+            bkmrx_lib::commands::get_server_status,
         ])
         .on_window_event(move |_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
@@ -39,5 +38,5 @@ fn main() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("error while running bkmr-desktop");
+        .expect("error while running bkmrx");
 }

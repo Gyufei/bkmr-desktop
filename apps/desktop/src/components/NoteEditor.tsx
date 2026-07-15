@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Crepe } from "@milkdown/crepe";
 import "@milkdown/crepe/theme/common/style.css";
+import '@milkdown/crepe/theme/nord.css'
 
 interface Props {
   filePath: string;
@@ -54,7 +55,7 @@ export default function NoteEditor({ filePath, readFile, onSave }: Props) {
                 setSaveStatus("已保存");
                 setTimeout(() => setSaveStatus(""), 2000);
               })
-              .catch(() => {});
+              .catch(() => { });
           }, 1500);
         });
       });

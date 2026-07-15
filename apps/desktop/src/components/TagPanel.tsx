@@ -44,7 +44,7 @@ export default function TagPanel({ fetchTags, selectedTags, onTagsChange }: Prop
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto pr-1 thin-scrollbar">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1 thin-scrollbar">
         {loading ? (
           <div className="text-sm text-text-secondary dark:text-text-dark-secondary py-4 text-center">加载中...</div>
         ) : (

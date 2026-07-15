@@ -1,7 +1,7 @@
 {
-  "productName": "bkmr-desktop",
+  "productName": "bkmrx",
   "version": "0.1.0",
-  "identifier": "com.bkmr.desktop",
+  "identifier": "com.bkmrx",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "bkmr-desktop",
+        "title": "bkmrx",
         "width": 1280,
         "height": 800,
         "maximized": true

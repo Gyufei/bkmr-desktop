@@ -1,6 +1,6 @@
-# bkmr-desktop
+# bkmrx
 
-[bkmr](https://github.com/BlobMichael/bkmr) 书签管理器的桌面 GUI，基于 Tauri v2 构建。
+[bkmr](https://github.com/sysid/bkmr) 书签管理命令行工具的桌面 GUI，基于 Tauri v2 构建。
 
 ## 功能
 
@@ -15,7 +15,7 @@
 
 ### 前置依赖
 
-- [bkmr](https://github.com/BlobMichael/bkmr) CLI — 后端依赖
+- [bkmr](https://github.com/sysid/bkmr) CLI — 后端依赖
 - Rust toolchain（推荐通过 [rustup](https://rustup.rs) 安装）
 - Node.js >= 18
 
@@ -48,7 +48,7 @@ npm run tauri build
 ## 项目结构
 
 ```
-bkmr-desktop/
+bkmrx/
 ├── src/                    # React 前端
 │   ├── components/         # UI 组件
 │   │   ├── SearchBar.tsx

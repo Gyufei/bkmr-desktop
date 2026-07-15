@@ -191,7 +191,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bkmr-desktop"
+name = "bkmrx"
 version = "0.1.0"
 dependencies = [
  "axum",
