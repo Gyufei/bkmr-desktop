@@ -1,22 +1,22 @@
 import { Copy } from "lucide-react";
-import { buildFolderTree } from "../utils/buildFolderTree";
+import { buildFolderTree } from "./buildFolderTree";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { tagColor } from "../utils/tagColor";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { tagColor } from "../shared/tagColor";
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-} from "./ui/context-menu";
+} from "../ui/context-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import FolderTree from "./FolderTree";
 import NoteEditor from "./NoteEditor";
 import type { NoteFile } from "../types";

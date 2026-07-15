@@ -1,5 +1,5 @@
 import type { NoteFile } from "../types";
-import type { FolderNode } from "../components/FolderTree";
+import type { FolderNode } from "./FolderTree";
 
 export function buildFolderTree(notes: NoteFile[]): FolderNode[] {
   const rootMap = new Map<string, FolderNode>();

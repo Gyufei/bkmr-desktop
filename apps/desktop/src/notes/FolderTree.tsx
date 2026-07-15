@@ -5,7 +5,7 @@ import {
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-} from "./ui/context-menu";
+} from "../ui/context-menu";
 
 export interface FolderNode {
   path: string;

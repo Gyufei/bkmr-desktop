@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Input } from "./ui/input";
+import { Input } from "../ui/input";
 
 interface Props {
   onSearch: (query: string) => void;

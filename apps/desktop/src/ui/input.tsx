@@ -1,22 +1,23 @@
 import * as React from "react"
-import { cn } from "../../lib/utils"
+import { cn } from "../shared/utils"
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
     return (
-      <textarea
+      <input
+        type={type}
         className={cn(
-          "flex min-h-[60px] w-full rounded-input border px-3 py-2 text-sm",
+          "flex h-9 w-full rounded-input px-3 py-1 text-sm",
           "bg-surface dark:bg-surface-dark",
-          "border-border dark:border-border-dark",
+          "border border-border dark:border-border-dark",
           "text-text-primary dark:text-text-dark-primary",
           "placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "resize-none transition-colors",
+          "transition-colors",
           className,
         )}
         ref={ref}
@@ -25,6 +26,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     )
   },
 )
-Textarea.displayName = "Textarea"
+Input.displayName = "Input"
 
-export { Textarea }
+export { Input }

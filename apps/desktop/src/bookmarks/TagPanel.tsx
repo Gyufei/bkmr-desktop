@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { Filter, Copy } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-} from "./ui/context-menu";
-import { tagColor } from "../utils/tagColor";
+} from "../ui/context-menu";
+import { tagColor } from "../shared/tagColor";
 import type { Tag } from "../types";
 interface Props {
   fetchTags: () => Promise<Tag[]>;

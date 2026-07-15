@@ -7,17 +7,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-} from "./ui/context-menu";
-import { Button } from "./ui/button";
+} from "../ui/context-menu";
+import { Button } from "../ui/button";
 import EditBookmarkDialog from "./EditBookmarkDialog";
-import { tagColor } from "../utils/tagColor";
+import { tagColor } from "../shared/tagColor";
 import { open } from "@tauri-apps/plugin-shell";
 import type { Bookmark } from "../types";
 

@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Label } from "./ui/label";
-import type { AppSettings } from "../hooks/useSettings";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Label } from "../ui/label";
+import type { AppSettings } from "./useSettings";
 
 interface Props {
   settings: AppSettings;

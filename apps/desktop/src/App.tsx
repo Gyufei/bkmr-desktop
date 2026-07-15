@@ -2,15 +2,15 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import Fuse from "fuse.js";
-import { useBkmr } from "./hooks/useBkmr";
-import { useNotes } from "./hooks/useNotes";
-import { useSettings } from "./hooks/useSettings";
-import NotesPanel from "./components/NotesPanel";
-import SettingsPage from "./components/SettingsPage";
+import { useBkmr } from "./bookmarks/useBkmr";
+import { useNotes } from "./notes/useNotes";
+import { useSettings } from "./settings/useSettings";
+import NotesPanel from "./notes/NotesPanel";
+import SettingsPage from "./settings/SettingsPage";
 import type { Bookmark } from "./types";
-import AddBookmarkDialog from "./components/AddBookmarkDialog";
-import { Button } from "./components/ui/button";
-import BookmarkView from "./components/BookmarkView";
+import AddBookmarkDialog from "./bookmarks/AddBookmarkDialog";
+import { Button } from "./ui/button";
+import BookmarkView from "./bookmarks/BookmarkView";
 
 const TABS = [
   { id: "bookmarks", label: "书签" },

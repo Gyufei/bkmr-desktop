@@ -1,7 +1,7 @@
 import SearchBar from "./SearchBar";
 import TagPanel from "./TagPanel";
 import ResultList from "./ResultList";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import type { Bookmark, Tag } from "../types";
 

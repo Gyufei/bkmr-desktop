@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,81 +6,86 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Label } from "./ui/label";
-import type { Bookmark } from "../types";
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
 
 interface Props {
-  bookmark: Bookmark | null;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdate: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
+  onAdd: (url: string, title: string, tags: string[], description?: string) => Promise<void>;
 }
 
-export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }: Props) {
+export default function AddBookmarkDialog({ open, onOpenChange, onAdd }: Props) {
+  const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (bookmark) {
-      setTitle(bookmark.title || "");
-      setTags(bookmark.tags.join(", "));
-      setDescription(bookmark.description || "");
-    }
-  }, [bookmark]);
-
   const handleSubmit = useCallback(async () => {
-    if (!bookmark) return;
+    if (!url.trim()) return;
     setSubmitting(true);
     try {
       const tagList = tags
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      await onUpdate(bookmark.id, title.trim(), tagList, description.trim() || undefined);
+      await onAdd(url.trim(), title.trim(), tagList, description.trim() || undefined);
+      setUrl("");
+      setTitle("");
+      setTags("");
+      setDescription("");
       onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
-  }, [bookmark, title, tags, onUpdate, onOpenChange]);
+  }, [url, title, tags, onAdd, onOpenChange]);
 
   return (
-    <Dialog open={bookmark !== null} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>编辑书签</DialogTitle>
+          <DialogTitle>添加书签</DialogTitle>
           <DialogDescription>
-            修改标题、标签或描述。
+            输入书签信息，添加后自动同步到 bkmr 数据库。
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="edit-title">标题</Label>
+            <Label htmlFor="url">URL</Label>
             <Input
-              id="edit-title"
-              placeholder="书签标题"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id="url"
+              placeholder="https://example.com"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
               autoFocus
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-tags">标签（逗号分隔）</Label>
+            <Label htmlFor="title">标题（可选）</Label>
             <Input
-              id="edit-tags"
+              id="title"
+              placeholder="书签标题"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tags">标签（可选，逗号分隔）</Label>
+            <Input
+              id="tags"
               placeholder="fe, 全栈, react"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-description">描述（可选）</Label>
+            <Label htmlFor="description">描述（可选）</Label>
             <Textarea
-              id="edit-description"
+              id="description"
               placeholder="添加备注或描述"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -91,8 +96,8 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "保存中..." : "保存"}
+          <Button onClick={handleSubmit} disabled={!url.trim() || submitting}>
+            {submitting ? "添加中..." : "添加"}
           </Button>
         </DialogFooter>
       </DialogContent>
