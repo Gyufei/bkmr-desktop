@@ -15,18 +15,20 @@ import type { Bookmark } from "../types";
 interface Props {
   bookmark: Bookmark | null;
   onOpenChange: (open: boolean) => void;
-  onUpdate: (id: number, title: string, tags: string[]) => Promise<void>;
+  onUpdate: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
 }
 
 export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }: Props) {
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
+  const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (bookmark) {
       setTitle(bookmark.title || "");
       setTags(bookmark.tags.join(", "));
+      setDescription(bookmark.description || "");
     }
   }, [bookmark]);
 
@@ -38,7 +40,7 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      await onUpdate(bookmark.id, title.trim(), tagList);
+      await onUpdate(bookmark.id, title.trim(), tagList, description.trim() || undefined);
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -51,7 +53,7 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
         <DialogHeader>
           <DialogTitle>编辑书签</DialogTitle>
           <DialogDescription>
-            修改标题或标签。
+            修改标题、标签或描述。
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -72,6 +74,16 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
               placeholder="fe, 全栈, react"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">描述（可选）</Label>
+            <textarea
+              id="edit-description"
+              className="flex min-h-[60px] w-full rounded-input border border-border dark:border-border-dark bg-background px-3 py-2 text-sm placeholder:text-text-secondary dark:placeholder:text-text-dark-secondary focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
+              placeholder="添加备注或描述"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </div>

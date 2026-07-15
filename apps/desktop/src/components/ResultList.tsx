@@ -28,7 +28,7 @@ interface Props {
   hasMore: boolean;
   onLoadMore: () => void;
   onDeleteBookmark: (id: number) => void;
-  onUpdateBookmark: (id: number, title: string, tags: string[]) => Promise<void>;
+  onUpdateBookmark: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
 }
 
 export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark, onUpdateBookmark }: Props) {

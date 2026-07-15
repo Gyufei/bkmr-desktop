@@ -51,8 +51,8 @@ export function useBkmr() {
     }
   }, []);
 
-  const updateBookmark = useCallback(async (id: number, title: string, tags: string[]): Promise<void> => {
-    await invoke("update_bookmark", { id, title, tags });
+  const updateBookmark = useCallback(async (id: number, title: string, tags: string[], description?: string): Promise<void> => {
+    await invoke("update_bookmark", { id, title, tags, description: description ?? null });
   }, []);
 
   return { allBookmarks, loading, error, loadAll, fetchTags, backup, addBookmark, checkBookmark, updateBookmark, deleteBookmarks };
