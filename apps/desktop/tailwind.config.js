@@ -65,12 +65,22 @@ export default {
           from: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
           to: { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
         },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "scale-out": {
+          from: { opacity: "1", transform: "scale(1)" },
+          to: { opacity: "0", transform: "scale(0.95)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.2s ease-out",
         "fade-out": "fade-out 0.2s ease-in",
         "zoom-in": "zoom-in 0.2s ease-out",
         "zoom-out": "zoom-out 0.2s ease-in",
+        "scale-in": "scale-in 0.12s ease-out",
+        "scale-out": "scale-out 0.08s ease-in",
       },
     },
   },

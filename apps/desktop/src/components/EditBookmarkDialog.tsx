@@ -1,0 +1,89 @@
+import { useState, useCallback, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import type { Bookmark } from "../types";
+
+interface Props {
+  bookmark: Bookmark | null;
+  onOpenChange: (open: boolean) => void;
+  onUpdate: (id: number, title: string, tags: string[]) => Promise<void>;
+}
+
+export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }: Props) {
+  const [title, setTitle] = useState("");
+  const [tags, setTags] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (bookmark) {
+      setTitle(bookmark.title || "");
+      setTags(bookmark.tags.join(", "));
+    }
+  }, [bookmark]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!bookmark) return;
+    setSubmitting(true);
+    try {
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      await onUpdate(bookmark.id, title.trim(), tagList);
+      onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [bookmark, title, tags, onUpdate, onOpenChange]);
+
+  return (
+    <Dialog open={bookmark !== null} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>编辑书签</DialogTitle>
+          <DialogDescription>
+            修改标题或标签。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">标题</Label>
+            <Input
+              id="edit-title"
+              placeholder="书签标题"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-tags">标签（逗号分隔）</Label>
+            <Input
+              id="edit-tags"
+              placeholder="fe, 全栈, react"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            取消
+          </Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "保存中..." : "保存"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

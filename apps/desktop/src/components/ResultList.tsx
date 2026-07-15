@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { ExternalLink, Link, Code, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from "./ui/dialog";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "./ui/context-menu";
 import { Button } from "./ui/button";
+import EditBookmarkDialog from "./EditBookmarkDialog";
 import { tagColor } from "../utils/tagColor";
 import { open } from "@tauri-apps/plugin-shell";
 import type { Bookmark } from "../types";
@@ -20,11 +28,13 @@ interface Props {
   hasMore: boolean;
   onLoadMore: () => void;
   onDeleteBookmark: (id: number) => void;
+  onUpdateBookmark: (id: number, title: string, tags: string[]) => Promise<void>;
 }
 
-export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark }: Props) {
+export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark, onUpdateBookmark }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bookmark | null>(null);
+  const [editTarget, setEditTarget] = useState<Bookmark | null>(null);
 
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -65,7 +75,37 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
   return (
     <div className="space-y-1">
       {bookmarks.map((bm) => (
-        <BookmarkRow key={bm.id} bookmark={bm} onRequestDelete={setDeleteTarget} />
+        <ContextMenu key={bm.id}>
+          <ContextMenuTrigger>
+            <BookmarkRow bookmark={bm} onRequestDelete={setDeleteTarget} />
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onSelect={() => open(bm.url)}>
+              <ExternalLink className="h-4 w-4" />
+              <span>打开链接</span>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => { navigator.clipboard.writeText(bm.url).catch(() => {}); }}>
+              <Link className="h-4 w-4" />
+              <span>复制链接</span>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => {
+              const text = bm.title ? `[${bm.title}](${bm.url})` : bm.url;
+              navigator.clipboard.writeText(text).catch(() => {});
+            }}>
+              <Code className="h-4 w-4" />
+              <span>复制为 Markdown</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={() => setEditTarget(bm)}>
+              <Pencil className="h-4 w-4" />
+              <span>编辑</span>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => setDeleteTarget(bm)}>
+              <Trash2 className="h-4 w-4" />
+              <span className="text-danger dark:text-danger-dark">删除</span>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       ))}
 
       {/* Delete confirmation dialog */}
@@ -93,6 +133,12 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditBookmarkDialog
+        bookmark={editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+        onUpdate={onUpdateBookmark}
+      />
 
       {/* Sentinel for infinite scroll */}
       <div ref={sentinelRef} className="h-4" />

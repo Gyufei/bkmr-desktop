@@ -28,7 +28,7 @@ const LOAD_MORE = 50;
 export default function App() {
   const {
     allBookmarks, loading, error,
-    loadAll, fetchTags, backup, addBookmark, deleteBookmarks,
+    loadAll, fetchTags, backup, addBookmark, deleteBookmarks, updateBookmark,
   } = useBkmr();
 
   const notes = useNotes();
@@ -42,6 +42,14 @@ export default function App() {
   const [serverRunning, setServerRunning] = useState(false);
   const [tagVersion, setTagVersion] = useState(0);
   const [showAddDialog, setShowAddDialog] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener("contextmenu", handler);
+    return () => document.removeEventListener("contextmenu", handler);
+  }, []);
 
   useEffect(() => {
     invoke<{ running: boolean }>("get_server_status")
@@ -238,6 +246,7 @@ export default function App() {
                   hasMore={hasMore}
                   onLoadMore={handleLoadMore}
                   onDeleteBookmark={handleDeleteBookmark}
+                  onUpdateBookmark={updateBookmark}
                 />
               </div>
             </main>
