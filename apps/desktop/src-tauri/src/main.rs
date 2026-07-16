@@ -8,9 +8,9 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let handle = app.handle().clone();
+            bkmrx_lib::notes::set_app_handle(handle.clone());
             tauri::async_runtime::spawn(
-                bkmrx_lib::notes::set_app_handle(handle.clone());
-            bkmrx_lib::http_server::start_server(handle, shutdown_rx)
+                bkmrx_lib::http_server::start_server(handle, shutdown_rx)
             );
             Ok(())
         })

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { NoteFile } from "../types";
@@ -7,34 +7,21 @@ export function useNotes() {
   const [notes, setNotes] = useState<NoteFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastDirRef = useRef<string | null>(null);
 
-  // Listen for real-time file events
+  // When background polling detects file changes, re-scan
   useEffect(() => {
-    const unlisten1 = listen<NoteFile>("note-changed", (event) => {
-      const changed = event.payload;
-      setNotes(prev => {
-        const idx = prev.findIndex(n => n.path === changed.path);
-        let next: NoteFile[];
-        if (idx >= 0) {
-          next = [...prev];
-          next[idx] = changed;
-        } else {
-          next = [...prev, changed];
-        }
-        return next.sort((a, b) => b.modified - a.modified);
-      });
+    const unlisten = listen("notes-refreshed", () => {
+      const dir = lastDirRef.current;
+      if (dir) {
+        scanDir(dir).catch(() => {});
+      }
     });
-    const unlisten2 = listen<string>("note-removed", (event) => {
-      const path = event.payload;
-      setNotes(prev => prev.filter(n => n.path !== path));
-    });
-    return () => {
-      unlisten1.then(fn => fn());
-      unlisten2.then(fn => fn());
-    };
+    return () => { unlisten.then(fn => fn()); };
   }, []);
 
   const scanDir = useCallback(async (dir: string): Promise<NoteFile[]> => {
+    lastDirRef.current = dir;
     setLoading(true);
     setError(null);
     try {
@@ -64,12 +51,10 @@ export function useNotes() {
 
   const deleteNote = useCallback(async (path: string): Promise<void> => {
     await invoke("delete_note", { path });
-    // The file watcher will emit note-removed, so no need to manually update state
   }, []);
 
   const renameNote = useCallback(async (oldPath: string, newPath: string): Promise<void> => {
     await invoke("rename_note", { oldPath, newPath });
-    // The file watcher will emit note-removed + note-changed
   }, []);
 
   return { notes, loading, error, scanDir, readFile, saveFile, createFile, deleteNote, renameNote };

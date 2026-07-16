@@ -1,22 +1,15 @@
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::time::UNIX_EPOCH;
 use std::sync::OnceLock;
-use notify::{EventKind, RecursiveMode, Watcher};
-use notify_debouncer_mini::new_debouncer;
+use std::time::{Duration, UNIX_EPOCH};
+use tauri::Emitter;
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
-static DEBOUNCER: OnceLock<std::sync::Mutex<Option<notify_debouncer_mini::Debouncer<notify::RecommendedWatcher>>>> = OnceLock::new();
 
 pub fn set_app_handle(handle: tauri::AppHandle) {
     let _ = APP_HANDLE.set(handle);
-}
-
-pub fn stop_watcher() {
-    if let Some(mtx) = DEBOUNCER.get() {
-        *mtx.lock().unwrap() = None;
-    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -57,7 +50,7 @@ pub fn scan_notes(dir: &str) -> Result<Vec<NoteFile>, String> {
     notes.sort_by(|a, b| b.modified.cmp(&a.modified));
 
     if let Some(handle) = APP_HANDLE.get() {
-        start_watcher(dir, handle.clone());
+        start_polling(dir, handle.clone());
     }
 
     Ok(notes)
@@ -79,51 +72,49 @@ fn scan_dir(root: &Path, current: &Path, notes: &mut Vec<NoteFile>) -> Result<()
     Ok(())
 }
 
-fn start_watcher(dir: &str, app_handle: tauri::AppHandle) {
-    let mtx = DEBOUNCER.get_or_init(|| std::sync::Mutex::new(None));
-    let mut guard = mtx.lock().unwrap();
-    if guard.is_some() {
-        return;
-    }
-
-    let dir = dir.to_string();
-    let (tx, rx) = std::sync::mpsc::channel();
-    let mut debouncer = match new_debouncer(std::time::Duration::from_millis(500), None, tx) {
-        Ok(d) => d,
-        Err(e) => { eprintln!("Failed to create debouncer: {e}"); return; }
-    };
-
-    if let Err(e) = debouncer.watcher().watch(Path::new(&dir), RecursiveMode::Recursive) {
-        eprintln!("Failed to watch directory: {e}");
-        return;
-    }
-
-    let root = Path::new(&dir).to_path_buf();
-    std::thread::spawn(move || {
-        while let Ok(events) = rx.recv() {
-            let events = match events {
-                Ok(e) => e,
-                Err(e) => { eprintln!("Watch error: {e}"); continue; }
-            };
-            for event in &events {
-                let path = &event.path;
-                if path.extension().map_or(true, |e| e != "md") {
-                    continue;
-                }
-                let path_str = path.to_string_lossy().to_string();
-                let kind = event.kind;
-                if matches!(kind, EventKind::Create(_) | EventKind::Modify(_)) {
-                    if let Some(note) = scan_note(&root, path) {
-                        let _ = app_handle.emit("note-changed", ¬e);
-                    }
-                } else if matches!(kind, EventKind::Remove(_)) {
-                    let _ = app_handle.emit("note-removed", &path_str);
+fn collect_state(root: &Path) -> HashMap<String, u64> {
+    let mut state = HashMap::new();
+    if let Ok(entries) = fs::read_dir(root) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                state.extend(collect_state(&path));
+            } else if path.extension().map_or(false, |e| e == "md") {
+                if let Ok(meta) = fs::metadata(&path) {
+                    let mtime = meta
+                        .modified()
+                        .ok()
+                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                        .map(|d| d.as_secs())
+                        .unwrap_or(0);
+                    state.insert(path.to_string_lossy().to_string(), mtime);
                 }
             }
         }
-    });
+    }
+    state
+}
 
-    *guard = Some(debouncer);
+fn start_polling(dir: &str, app_handle: tauri::AppHandle) {
+    static STARTED: OnceLock<bool> = OnceLock::new();
+    if STARTED.set(true).is_err() {
+        return; // already started
+    }
+
+    let dir = dir.to_string();
+    let root = Path::new(&dir).to_path_buf();
+    let mut last_state = collect_state(&root);
+
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(Duration::from_secs(2));
+            let current = collect_state(&root);
+            if current != last_state {
+                last_state = current;
+                let _ = app_handle.emit("notes-refreshed", ());
+            }
+        }
+    });
 }
 
 pub fn delete_note_file(path: &str) -> Result<(), String> {
@@ -143,7 +134,11 @@ pub fn write_note_file(path: &str, content: &str) -> Result<(), String> {
 }
 
 pub fn create_note_file(dir: &str, name: &str) -> Result<String, String> {
-    let file_name = if name.ends_with(".md") { name.to_string() } else { format!("{}.md", name) };
+    let file_name = if name.ends_with(".md") {
+        name.to_string()
+    } else {
+        format!("{}.md", name)
+    };
     let path = std::path::Path::new(dir).join(&file_name);
     if path.exists() {
         return Err("文件已存在".to_string());
