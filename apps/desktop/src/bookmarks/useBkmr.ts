@@ -39,6 +39,10 @@ export function useBkmr() {
     return await invoke<number>("add_bookmark", { url, title, tags, description });
   }, []);
 
+  const searchBookmarks = useCallback(async (query: string): Promise<Bookmark[]> => {
+    return await invoke<Bookmark[]>("search_bookmarks", { query });
+  }, []);
+
   const deleteBookmarks = useCallback(async (ids: number[]): Promise<number> => {
     return await invoke<number>("delete_bookmarks", { ids });
   }, []);
@@ -55,5 +59,5 @@ export function useBkmr() {
     await invoke("update_bookmark", { id, title, tags, description: description ?? null });
   }, []);
 
-  return { allBookmarks, loading, error, loadAll, fetchTags, backup, addBookmark, checkBookmark, updateBookmark, deleteBookmarks };
+  return { allBookmarks, loading, error, loadAll, fetchTags, backup, addBookmark, checkBookmark, updateBookmark, deleteBookmarks, searchBookmarks };
 }

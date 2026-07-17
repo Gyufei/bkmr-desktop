@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import Fuse from "fuse.js";
 import { useBkmr } from "./bookmarks/useBkmr";
 import { useNotes } from "./notes/useNotes";
 import { useSettings } from "./settings/useSettings";
@@ -25,7 +24,7 @@ const LOAD_MORE = 50;
 export default function App() {
   const {
     allBookmarks, loading, error,
-    loadAll, fetchTags, backup, addBookmark, deleteBookmarks, updateBookmark,
+    loadAll, fetchTags, backup, addBookmark, deleteBookmarks, updateBookmark, searchBookmarks,
   } = useBkmr();
 
   const notes = useNotes();
@@ -84,39 +83,33 @@ export default function App() {
     return () => { unlisten.then(fn => fn()); };
   }, [loadAll, setTagVersion]);
 
-  // Build Fuse.js index when allBookmarks changes
-  const fuseRef = useRef<Fuse<Bookmark> | null>(null);
+  // Search debounce
+  const [searchResults, setSearchResults] = useState<Bookmark[] | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
-    fuseRef.current = allBookmarks.length > 0
-      ? new Fuse(allBookmarks, {
-        keys: [
-          { name: "title", weight: 0.5 },
-          { name: "url", weight: 0.2 },
-          { name: "tags", weight: 0.2 },
-          { name: "description", weight: 0.1 },
-        ],
-        threshold: 0.4,
-        includeScore: true,
-      })
-      : null;
-  }, [allBookmarks]);
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(async () => {
+      const results = await searchBookmarks(query.trim());
+      setSearchResults(results);
+    }, 200);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [query, searchBookmarks]);
 
   // Local fuzzy search + tag intersection
   const filteredBookmarks = useMemo(() => {
-    const fuse = fuseRef.current;
-    let results: Bookmark[];
-    if (query.trim()) {
-      results = fuse ? fuse.search(query.trim()).map((r) => r.item) : [];
-    } else {
-      results = allBookmarks;
-    }
+    const source = query.trim() && searchResults ? searchResults : allBookmarks;
+    let results = source;
     if (selectedTags.length > 0) {
       results = results.filter((bm) =>
         selectedTags.every((t) => bm.tags.includes(t)),
       );
     }
     return results;
-  }, [allBookmarks, query, selectedTags]);
+  }, [allBookmarks, searchResults, query, selectedTags]);
 
   const handleSearch = useCallback((q: string) => {
     setQuery(q);

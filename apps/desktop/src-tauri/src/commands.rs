@@ -114,6 +114,15 @@ pub async fn delete_bookmarks(ids: Vec<u64>) -> Result<u64, String> {
 }
 
 #[tauri::command]
+pub async fn search_bookmarks(query: String) -> Result<Vec<BkmrBookmark>, String> {
+    let container = crate::container::get();
+    let bookmarks = container.bookmark_service
+        .search_bookmarks_by_text(&query)
+        .map_err(|e| e.to_string())?;
+    Ok(bookmarks.iter().map(|b| to_bkmr_bookmark(&b)).collect())
+}
+
+#[tauri::command]
 pub async fn scan_notes(dir: String) -> Result<Vec<crate::notes::NoteFile>, String> {
     crate::notes::scan_notes(&dir)
 }
