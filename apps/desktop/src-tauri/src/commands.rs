@@ -1,4 +1,5 @@
 use serde::Serialize;
+use bkmr_lib::domain::search::{HybridSearch, SearchMode};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BkmrBookmark {
@@ -136,6 +137,33 @@ pub async fn search_bookmarks(query: String) -> Result<Vec<BkmrBookmark>, String
         .map_err(|e| e.to_string())?;
     Ok(bookmarks.iter().map(|b| to_bkmr_bookmark(&b)).collect())
 }
+
+#[tauri::command]
+pub async fn hybrid_search_bookmarks(
+    query: String,
+) -> Result<Vec<BkmrBookmark>, String> {
+    let container = crate::container::get();
+
+    let search = HybridSearch {
+        query,
+        tags_all: None,
+        tags_all_not: None,
+        tags_any: None,
+        tags_any_not: None,
+        tags_exact: None,
+        tags_prefix: None,
+        limit: Some(500),
+        mode: SearchMode::Hybrid,
+    };
+
+    let results = container
+        .bookmark_service
+        .hybrid_search(&search)
+        .map_err(|e| e.to_string())?;
+
+    Ok(results.iter().map(|r| to_bkmr_bookmark(&r.bookmark)).collect())
+}
+
 
 #[tauri::command]
 pub async fn scan_notes(dir: String) -> Result<Vec<crate::notes::NoteFile>, String> {

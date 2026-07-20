@@ -20,7 +20,7 @@ import EditBookmarkDialog from "./EditBookmarkDialog";
 import { tagColor } from "../shared/tagColor";
 import { open } from "@tauri-apps/plugin-shell";
 import { invoke } from "@tauri-apps/api/core";
-import type { Bookmark } from "../types";
+import type { Bookmark, Tag } from "../types";
 
 interface Props {
   bookmarks: Bookmark[];
@@ -30,9 +30,10 @@ interface Props {
   onLoadMore: () => void;
   onDeleteBookmark: (id: number) => void;
   onUpdateBookmark: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
+  fetchTags: () => Promise<Tag[]>;
 }
 
-export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark, onUpdateBookmark }: Props) {
+export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark, onUpdateBookmark, fetchTags }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bookmark | null>(null);
   const [editTarget, setEditTarget] = useState<Bookmark | null>(null);
@@ -139,6 +140,7 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
         bookmark={editTarget}
         onOpenChange={(open) => { if (!open) setEditTarget(null); }}
         onUpdate={onUpdateBookmark}
+        fetchTags={fetchTags}
       />
 
       {/* Sentinel for infinite scroll */}

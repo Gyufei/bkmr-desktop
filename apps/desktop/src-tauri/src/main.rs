@@ -32,6 +32,8 @@ fn main() {
             bkmrx_lib::commands::update_bookmark,
             bkmrx_lib::commands::scan_notes,
             bkmrx_lib::commands::search_bookmarks,
+            bkmrx_lib::commands::hybrid_search_bookmarks,
+
             bkmrx_lib::commands::record_bookmark_access,
             bkmrx_lib::commands::read_note_file,
             bkmrx_lib::commands::write_note_file,

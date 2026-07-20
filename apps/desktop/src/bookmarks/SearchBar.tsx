@@ -22,6 +22,11 @@ export default function SearchBar({ onSearch, loading }: Props) {
     <div className="relative flex-1">
       <Input
         type="text"
+        autoComplete="one-time-code"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-form-type="other"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="搜索书签..."

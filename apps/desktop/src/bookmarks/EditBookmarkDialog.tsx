@@ -11,24 +11,26 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
-import type { Bookmark } from "../types";
+import TagInput from "../ui/TagInput";
+import type { Bookmark, Tag } from "../types";
 
 interface Props {
   bookmark: Bookmark | null;
   onOpenChange: (open: boolean) => void;
   onUpdate: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
+  fetchTags: () => Promise<Tag[]>;
 }
 
-export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }: Props) {
+export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, fetchTags }: Props) {
   const [title, setTitle] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (bookmark) {
       setTitle(bookmark.title || "");
-      setTags(bookmark.tags.join(", "));
+      setTags(bookmark.tags);
       setDescription(bookmark.description || "");
     }
   }, [bookmark]);
@@ -37,16 +39,12 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
     if (!bookmark) return;
     setSubmitting(true);
     try {
-      const tagList = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      await onUpdate(bookmark.id, title.trim(), tagList, description.trim() || undefined);
+      await onUpdate(bookmark.id, title.trim(), tags, description.trim() || undefined);
       onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
-  }, [bookmark, title, tags, onUpdate, onOpenChange]);
+  }, [bookmark, title, tags, description, onUpdate, onOpenChange]);
 
   return (
     <Dialog open={bookmark !== null} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
@@ -69,13 +67,8 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate }:
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-tags">标签（逗号分隔）</Label>
-            <Input
-              id="edit-tags"
-              placeholder="fe, 全栈, react"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
+            <Label>标签（可选）</Label>
+            <TagInput value={tags} onChange={setTags} fetchTags={fetchTags} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-description">描述（可选）</Label>

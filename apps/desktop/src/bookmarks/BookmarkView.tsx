@@ -56,6 +56,7 @@ export default function BookmarkView({
               onLoadMore={onLoadMore}
               onDeleteBookmark={onDeleteBookmark}
               onUpdateBookmark={onUpdateBookmark}
+              fetchTags={fetchTags}
             />
           </div>
         </main>

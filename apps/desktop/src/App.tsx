@@ -148,11 +148,17 @@ export default function App() {
     setTagVersion(v => v + 1);
   }, [addBookmark, loadAll, setTagVersion]);
 
+  const handleUpdateBookmark = useCallback(async (id: number, title: string, tags: string[], description?: string) => {
+    await updateBookmark(id, title, tags, description);
+    await loadAll();
+    setTagVersion(v => v + 1);
+  }, [updateBookmark, loadAll, setTagVersion]);
   const handleDeleteBookmark = useCallback(async (id: number) => {
     await deleteBookmarks([id]);
     await loadAll();
     setTagVersion(v => v + 1);
   }, [deleteBookmarks, loadAll, setTagVersion]);
+
 
   return (
     <div className="h-screen flex flex-col bg-surface dark:bg-surface-dark text-text-primary dark:text-text-dark-primary">
@@ -222,7 +228,7 @@ export default function App() {
           hasMore={hasMore}
           onLoadMore={handleLoadMore}
           onDeleteBookmark={handleDeleteBookmark}
-          onUpdateBookmark={updateBookmark}
+          onUpdateBookmark={handleUpdateBookmark}
           onOpenAddDialog={() => setShowAddDialog(true)}
         />
       ) : (
@@ -256,6 +262,7 @@ export default function App() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onAdd={handleAddBookmark}
+        fetchTags={fetchTags}
       />
     </div>
   );

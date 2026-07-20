@@ -11,17 +11,20 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
+import TagInput from "../ui/TagInput";
+import type { Tag } from "../types";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (url: string, title: string, tags: string[], description?: string) => Promise<void>;
+  fetchTags: () => Promise<Tag[]>;
 }
 
-export default function AddBookmarkDialog({ open, onOpenChange, onAdd }: Props) {
+export default function AddBookmarkDialog({ open, onOpenChange, onAdd, fetchTags }: Props) {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,20 +32,16 @@ export default function AddBookmarkDialog({ open, onOpenChange, onAdd }: Props) 
     if (!url.trim()) return;
     setSubmitting(true);
     try {
-      const tagList = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      await onAdd(url.trim(), title.trim(), tagList, description.trim() || undefined);
+      await onAdd(url.trim(), title.trim(), tags, description.trim() || undefined);
       setUrl("");
       setTitle("");
-      setTags("");
+      setTags([]);
       setDescription("");
       onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
-  }, [url, title, tags, onAdd, onOpenChange]);
+  }, [url, title, tags, description, onAdd, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
@@ -74,13 +73,8 @@ export default function AddBookmarkDialog({ open, onOpenChange, onAdd }: Props) 
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tags">标签（可选，逗号分隔）</Label>
-            <Input
-              id="tags"
-              placeholder="fe, 全栈, react"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
+            <Label>标签（可选）</Label>
+            <TagInput value={tags} onChange={setTags} fetchTags={fetchTags} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">描述（可选）</Label>

@@ -40,7 +40,7 @@ export function useBkmr() {
   }, []);
 
   const searchBookmarks = useCallback(async (query: string): Promise<Bookmark[]> => {
-    return await invoke<Bookmark[]>("search_bookmarks", { query });
+    return await invoke<Bookmark[]>("hybrid_search_bookmarks", { query });
   }, []);
 
   const deleteBookmarks = useCallback(async (ids: number[]): Promise<number> => {
