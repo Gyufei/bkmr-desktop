@@ -185,7 +185,7 @@ document.addEventListener('alpine:init', () => {
       const resp = await fetch(`${BKMR_API}/api/bookmarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, title, tags }),
+        body: JSON.stringify({ url, title, tags, description }),
       });
       const data = await resp.json();
       if (resp.ok) {
@@ -208,7 +208,7 @@ document.addEventListener('alpine:init', () => {
     async _updateBookmark(title, tags, description) {
       const resp = await fetch(
         `${BKMR_API}/api/bookmarks/${this.existingBookmark.id}`,
-        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, tags }) }
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, tags, description }) }
       );
       const data = await resp.json();
       if (resp.ok) {
