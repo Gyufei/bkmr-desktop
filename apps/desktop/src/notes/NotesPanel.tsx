@@ -1,35 +1,35 @@
-import { Copy, Trash2 } from "lucide-react";
-import { buildFolderTree } from "./buildFolderTree";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { tagColor } from "../lib/tagColor";
+import { Copy, Trash2 } from 'lucide-react';
+import { buildFolderTree } from './buildFolderTree';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { tagColor } from '../lib/tagColor';
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import FolderTree from "./FolderTree";
-import NoteEditor from "./NoteEditor";
-import { useNotes } from "./useNotes";
-import { useSettings } from "../settings/useSettings";
-import type { NoteFile } from "../types";
+} from '@/components/ui/dialog';
+import FolderTree from './FolderTree';
+import NoteEditor from './NoteEditor';
+import { useNotes } from './useNotes';
+import { useSettings } from '../settings/useSettings';
+import type { NoteFile } from '../types';
 
 function formatTime(unix: number): string {
   const d = new Date(unix * 1000);
   const now = new Date();
   const diff = now.getTime() - d.getTime();
-  if (diff < 86400000) return "今天";
-  if (diff < 172800000) return "昨天";
+  if (diff < 86400000) return '今天';
+  if (diff < 172800000) return '昨天';
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
@@ -39,9 +39,9 @@ export default function NotesPanel() {
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
-  const [newFileName, setNewFileName] = useState("");
+  const [newFileName, setNewFileName] = useState('');
   const [newFileError, setNewFileError] = useState<string | null>(null);
   const [notesDir, setNotesDir] = useState<string | null>(null);
 
@@ -62,14 +62,12 @@ export default function NotesPanel() {
   const filteredNotes = useMemo(() => {
     let result = notes;
     if (selectedFolder) {
-      result = result.filter((n) => n.relative_path.startsWith(selectedFolder + "/"));
+      result = result.filter((n) => n.relative_path.startsWith(selectedFolder + '/'));
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) ||
-          n.tags.some((t) => t.toLowerCase().includes(q))
+        (n) => n.title.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q)),
       );
     }
     return result;
@@ -82,18 +80,16 @@ export default function NotesPanel() {
   const handleCreate = useCallback(async () => {
     const name = newFileName.trim();
     if (!name) {
-      setNewFileError("请输入文件名");
+      setNewFileError('请输入文件名');
       return;
     }
     setNewFileError(null);
     try {
-      const targetDir = selectedFolder
-        ? `${notesDir}/${selectedFolder}`
-        : notesDir!;
+      const targetDir = selectedFolder ? `${notesDir}/${selectedFolder}` : notesDir!;
       const filePath = await createFile(targetDir, name);
       const updatedNotes = await scanDir(notesDir!);
       setShowNewModal(false);
-      setNewFileName("");
+      setNewFileName('');
       const newNote = updatedNotes.find((n) => n.path === filePath);
       if (newNote) handleSelectFile(newNote);
     } catch (e) {
@@ -105,7 +101,18 @@ export default function NotesPanel() {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
         <div className="text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-40">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mx-auto mb-3 opacity-40"
+          >
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
@@ -119,15 +126,11 @@ export default function NotesPanel() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="shrink-0 px-4 py-3 border-b border-border">
-        <div className="text-xs text-muted-foreground">
-          共 {notes.length} 篇笔记
-        </div>
+        <div className="text-xs text-muted-foreground">共 {notes.length} 篇笔记</div>
       </div>
 
       {error && (
-        <div className="shrink-0 px-4 py-2 text-sm text-destructive bg-destructive/10">
-          {error}
-        </div>
+        <div className="shrink-0 px-4 py-2 text-sm text-destructive bg-destructive/10">{error}</div>
       )}
 
       <div className="flex-1 flex overflow-hidden">
@@ -161,14 +164,25 @@ export default function NotesPanel() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => {
-                  setNewFileName("");
+                  setNewFileName('');
                   setNewFileError(null);
                   setShowNewModal(true);
                 }}
                 title="新建笔记"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14"/><path d="M12 5v14"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5v14" />
                 </svg>
               </Button>
             </div>
@@ -180,9 +194,7 @@ export default function NotesPanel() {
                 扫描中...
               </div>
             ) : filteredNotes.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                无匹配笔记
-              </div>
+              <div className="py-8 text-center text-sm text-muted-foreground">无匹配笔记</div>
             ) : (
               <div className="space-y-0.5 px-2 pb-2">
                 {filteredNotes.map((note) => (
@@ -191,9 +203,7 @@ export default function NotesPanel() {
                       <button
                         onClick={() => handleSelectFile(note)}
                         className={`w-full text-left px-2.5 py-2 rounded-md transition-colors ${
-                        selectedFilePath === note.path
-                          ? "bg-primary/10"
-                            : "hover:bg-accent/15"
+                          selectedFilePath === note.path ? 'bg-primary/10' : 'hover:bg-accent/15'
                         }`}
                       >
                         <div className="text-sm font-medium text-foreground truncate">
@@ -218,12 +228,20 @@ export default function NotesPanel() {
                       </button>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
-                      <ContextMenuItem onClick={() => { navigator.clipboard.writeText(note.path).catch(() => {}); }}>
+                      <ContextMenuItem
+                        onClick={() => {
+                          navigator.clipboard.writeText(note.path).catch(() => {});
+                        }}
+                      >
                         <Copy className="h-4 w-4" />
                         <span>复制文件路径</span>
                       </ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem onClick={() => { deleteNote(note.path).catch(() => {}); }}>
+                      <ContextMenuItem
+                        onClick={() => {
+                          deleteNote(note.path).catch(() => {});
+                        }}
+                      >
                         <Trash2 className="h-4 w-4" />
                         <span className="text-destructive">删除笔记</span>
                       </ContextMenuItem>
@@ -237,11 +255,7 @@ export default function NotesPanel() {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {selectedFilePath ? (
-            <NoteEditor
-              filePath={selectedFilePath}
-              readFile={readFile}
-              onSave={saveFile}
-            />
+            <NoteEditor filePath={selectedFilePath} readFile={readFile} onSave={saveFile} />
           ) : (
             <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
               选择左侧笔记查看内容
@@ -250,7 +264,12 @@ export default function NotesPanel() {
         </div>
       </div>
 
-      <Dialog open={showNewModal} onOpenChange={(v) => { setShowNewModal(v); }}>
+      <Dialog
+        open={showNewModal}
+        onOpenChange={(v) => {
+          setShowNewModal(v);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>新建笔记</DialogTitle>
@@ -260,15 +279,16 @@ export default function NotesPanel() {
               <Input
                 type="text"
                 value={newFileName}
-                onChange={(e) => { setNewFileName(e.target.value); setNewFileError(null); }}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                onChange={(e) => {
+                  setNewFileName(e.target.value);
+                  setNewFileError(null);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 placeholder="输入文件名（无需 .md）"
                 autoFocus
               />
               {newFileError && (
-                <div className="mt-1.5 text-xs text-destructive">
-                  {newFileError}
-                </div>
+                <div className="mt-1.5 text-xs text-destructive">{newFileError}</div>
               )}
             </div>
           </div>

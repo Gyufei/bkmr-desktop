@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { X } from "lucide-react";
-import { cn } from "../lib/utils";
-import { tagColor } from "../lib/tagColor";
-import type { Tag } from "../types";
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { X } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { tagColor } from '../lib/tagColor';
+import type { Tag } from '../types';
 
 interface TagInputProps {
   value: string[];
@@ -17,11 +17,11 @@ export default function TagInput({
   value,
   onChange,
   fetchTags,
-  placeholder = "输入标签，回车添加",
+  placeholder = '输入标签，回车添加',
   disabled = false,
   autoFocus = false,
 }: TagInputProps) {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -40,9 +40,7 @@ export default function TagInput({
       return allTags.filter((t) => !value.includes(t));
     }
     const q = inputValue.toLowerCase();
-    return allTags.filter(
-      (t) => t.toLowerCase().includes(q) && !value.includes(t),
-    );
+    return allTags.filter((t) => t.toLowerCase().includes(q) && !value.includes(t));
   }, [allTags, inputValue, value]);
 
   const addTag = useCallback(
@@ -50,7 +48,7 @@ export default function TagInput({
       const trimmed = tag.trim();
       if (!trimmed || value.includes(trimmed)) return;
       onChange([...value, trimmed]);
-      setInputValue("");
+      setInputValue('');
       setActiveIdx(-1);
       // Keep dropdown open (closeOnSelect: false behavior)
       inputRef.current?.focus();
@@ -65,40 +63,35 @@ export default function TagInput({
     [value, onChange],
   );
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
-      setShowDropdown(true);
-      setActiveIdx(-1);
-    },
-    [],
-  );
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    setShowDropdown(true);
+    setActiveIdx(-1);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         if (activeIdx >= 0 && activeIdx < filteredSuggestions.length) {
           addTag(filteredSuggestions[activeIdx]);
         } else if (inputValue.trim()) {
           addTag(inputValue);
         }
-      } else if (e.key === "," || e.key === "，") {
+      } else if (e.key === ',' || e.key === '，') {
         e.preventDefault();
         if (inputValue.trim()) {
           addTag(inputValue);
         }
-      } else if (e.key === "Backspace" && !inputValue && value.length > 0) {
+      } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
         removeTag(value[value.length - 1]);
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         setShowDropdown(false);
         setActiveIdx(-1);
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setActiveIdx((prev) =>
-          Math.min(prev + 1, filteredSuggestions.length - 1),
-        );
-      } else if (e.key === "ArrowUp") {
+        setActiveIdx((prev) => Math.min(prev + 1, filteredSuggestions.length - 1));
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIdx((prev) => Math.max(prev - 1, -1));
       }
@@ -109,23 +102,20 @@ export default function TagInput({
   // Click outside to close dropdown
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
         setActiveIdx(-1);
       }
     };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
   // Scroll active dropdown item into view
   useEffect(() => {
     if (activeIdx >= 0 && dropdownRef.current) {
       const item = dropdownRef.current.children[activeIdx] as HTMLElement;
-      item?.scrollIntoView({ block: "nearest" });
+      item?.scrollIntoView({ block: 'nearest' });
     }
   }, [activeIdx]);
 
@@ -134,12 +124,12 @@ export default function TagInput({
       {/* Tag input area */}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-1.5 min-h-[36px] px-2 py-1",
-          "border rounded-lg bg-background",
-          "transition-colors",
+          'flex flex-wrap items-center gap-1.5 min-h-[36px] px-2 py-1',
+          'border rounded-lg bg-background',
+          'transition-colors',
           disabled
-            ? "border-border opacity-50 cursor-not-allowed"
-            : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
+            ? 'border-border opacity-50 cursor-not-allowed'
+            : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30',
         )}
       >
         {value.map((tag) => (
@@ -168,7 +158,7 @@ export default function TagInput({
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={value.length === 0 ? placeholder : ""}
+          placeholder={value.length === 0 ? placeholder : ''}
           autoFocus={autoFocus}
           className="flex-1 min-w-[80px] bg-transparent outline-none text-sm py-0.5 text-foreground placeholder:text-muted-foreground/50 dark:placeholder:text-muted-foreground/50"
         />
@@ -179,11 +169,11 @@ export default function TagInput({
         <div
           ref={dropdownRef}
           className={cn(
-            "absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto",
-            "border border-border rounded-lg",
-            "bg-background shadow-lg",
-            "p-2 flex flex-wrap gap-1.5",
-            "animate-scale-in origin-top",
+            'absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto',
+            'border border-border rounded-lg',
+            'bg-background shadow-lg',
+            'p-2 flex flex-wrap gap-1.5',
+            'animate-scale-in origin-top',
           )}
         >
           {filteredSuggestions.map((tag, i) => (
@@ -193,11 +183,9 @@ export default function TagInput({
               onClick={() => addTag(tag)}
               onMouseEnter={() => setActiveIdx(i)}
               className={cn(
-                "inline-flex items-center px-2 py-1 text-xs rounded-md",
-                "transition-colors cursor-pointer",
-                i === activeIdx
-                  ? "ring-2 ring-primary/40"
-                  : "hover:bg-accent",
+                'inline-flex items-center px-2 py-1 text-xs rounded-md',
+                'transition-colors cursor-pointer',
+                i === activeIdx ? 'ring-2 ring-primary/40' : 'hover:bg-accent',
               )}
               style={tagColor(tag)}
             >

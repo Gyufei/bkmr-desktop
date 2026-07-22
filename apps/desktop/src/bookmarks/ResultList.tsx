@@ -1,5 +1,5 @@
-import { useRef, useEffect, useCallback, useState } from "react";
-import { ExternalLink, Link, Code, Pencil, Trash2 } from "lucide-react";
+import { useRef, useEffect, useCallback, useState } from 'react';
+import { ExternalLink, Link, Code, Pencil, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,20 +7,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-} from "@/components/ui/context-menu";
-import { Button } from "@/components/ui/button";
-import EditBookmarkDialog from "./EditBookmarkDialog";
-import { tagColor } from "../lib/tagColor";
-import { open } from "@tauri-apps/plugin-shell";
-import { invoke } from "@tauri-apps/api/core";
-import type { Bookmark, Tag } from "../types";
+} from '@/components/ui/context-menu';
+import { Button } from '@/components/ui/button';
+import EditBookmarkDialog from './EditBookmarkDialog';
+import { tagColor } from '../lib/tagColor';
+import { open } from '@tauri-apps/plugin-shell';
+import { invoke } from '@tauri-apps/api/core';
+import type { Bookmark, Tag } from '../types';
 
 interface Props {
   bookmarks: Bookmark[];
@@ -29,11 +29,25 @@ interface Props {
   hasMore: boolean;
   onLoadMore: () => void;
   onDeleteBookmark: (id: number) => void;
-  onUpdateBookmark: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
+  onUpdateBookmark: (
+    id: number,
+    title: string,
+    tags: string[],
+    description?: string,
+  ) => Promise<void>;
   fetchTags: () => Promise<Tag[]>;
 }
 
-export default function ResultList({ bookmarks, loading, error, hasMore, onLoadMore, onDeleteBookmark, onUpdateBookmark, fetchTags }: Props) {
+export default function ResultList({
+  bookmarks,
+  loading,
+  error,
+  hasMore,
+  onLoadMore,
+  onDeleteBookmark,
+  onUpdateBookmark,
+  fetchTags,
+}: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bookmark | null>(null);
   const [editTarget, setEditTarget] = useState<Bookmark | null>(null);
@@ -44,7 +58,7 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
         onLoadMore();
       }
     },
-    [hasMore, loading, onLoadMore]
+    [hasMore, loading, onLoadMore],
   );
 
   useEffect(() => {
@@ -52,7 +66,7 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(handleIntersect, {
-      rootMargin: "200px",
+      rootMargin: '200px',
     });
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -60,9 +74,7 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-destructive">
-        {error}
-      </div>
+      <div className="flex items-center justify-center h-48 text-sm text-destructive">{error}</div>
     );
   }
 
@@ -82,18 +94,29 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
             <BookmarkRow bookmark={bm} onRequestDelete={setDeleteTarget} />
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem onClick={() => { open(bm.url); invoke("record_bookmark_access", { id: bm.id }).catch(() => {}); }}>
+            <ContextMenuItem
+              onClick={() => {
+                open(bm.url);
+                invoke('record_bookmark_access', { id: bm.id }).catch(() => {});
+              }}
+            >
               <ExternalLink className="h-4 w-4" />
               <span>打开链接</span>
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => { navigator.clipboard.writeText(bm.url).catch(() => {}); }}>
+            <ContextMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(bm.url).catch(() => {});
+              }}
+            >
               <Link className="h-4 w-4" />
               <span>复制链接</span>
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => {
-              const text = bm.title ? `[${bm.title}](${bm.url})` : bm.url;
-              navigator.clipboard.writeText(text).catch(() => {});
-            }}>
+            <ContextMenuItem
+              onClick={() => {
+                const text = bm.title ? `[${bm.title}](${bm.url})` : bm.url;
+                navigator.clipboard.writeText(text).catch(() => {});
+              }}
+            >
               <Code className="h-4 w-4" />
               <span>复制为 Markdown</span>
             </ContextMenuItem>
@@ -111,7 +134,12 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
       ))}
 
       {/* Delete confirmation dialog */}
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
@@ -120,7 +148,9 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>取消</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              取消
+            </Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -138,7 +168,9 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
 
       <EditBookmarkDialog
         bookmark={editTarget}
-        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
         onUpdate={onUpdateBookmark}
         fetchTags={fetchTags}
       />
@@ -164,10 +196,16 @@ export default function ResultList({ bookmarks, loading, error, hasMore, onLoadM
   );
 }
 
-function BookmarkRow({ bookmark, onRequestDelete }: { bookmark: Bookmark; onRequestDelete: (bm: Bookmark) => void }) {
+function BookmarkRow({
+  bookmark,
+  onRequestDelete,
+}: {
+  bookmark: Bookmark;
+  onRequestDelete: (bm: Bookmark) => void;
+}) {
   const handleClick = () => {
     open(bookmark.url);
-    invoke("record_bookmark_access", { id: bookmark.id }).catch(() => {});
+    invoke('record_bookmark_access', { id: bookmark.id }).catch(() => {});
   };
 
   return (
@@ -179,9 +217,7 @@ function BookmarkRow({ bookmark, onRequestDelete }: { bookmark: Bookmark; onRequ
         <div className="text-base font-medium text-foreground group-hover:text-primary transition-colors truncate pr-6">
           {bookmark.title || bookmark.url}
         </div>
-        <div className="text-xs text-muted-foreground truncate mt-0.5">
-          {bookmark.url}
-        </div>
+        <div className="text-xs text-muted-foreground truncate mt-0.5">{bookmark.url}</div>
         {bookmark.description && (
           <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {bookmark.description}
@@ -207,7 +243,10 @@ function BookmarkRow({ bookmark, onRequestDelete }: { bookmark: Bookmark; onRequ
         )}
       </div>
       <button
-        onClick={(e) => { e.stopPropagation(); onRequestDelete(bookmark); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRequestDelete(bookmark);
+        }}
         className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1.5 rounded-md text-muted-foreground hover:text-destructive dark:hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/10"
         title="删除书签"
       >

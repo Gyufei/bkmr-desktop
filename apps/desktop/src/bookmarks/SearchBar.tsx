@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { useState, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 interface Props {
   onSearch: (query: string) => void;
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function SearchBar({ onSearch, loading }: Props) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
 
   const handleSearch = useCallback(() => {
     onSearch(value);
@@ -16,7 +16,7 @@ export default function SearchBar({ onSearch, loading }: Props) {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         handleSearch();
       }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,13 +6,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import TagInput from "@/components/TagInput";
-import type { Bookmark, Tag } from "../types";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import TagInput from '@/components/TagInput';
+import type { Bookmark, Tag } from '../types';
 
 interface Props {
   bookmark: Bookmark | null;
@@ -22,16 +22,16 @@ interface Props {
 }
 
 export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, fetchTags }: Props) {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (bookmark) {
-      setTitle(bookmark.title || "");
+      setTitle(bookmark.title || '');
       setTags(bookmark.tags);
-      setDescription(bookmark.description || "");
+      setDescription(bookmark.description || '');
     }
   }, [bookmark]);
 
@@ -47,13 +47,16 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, f
   }, [bookmark, title, tags, description, onUpdate, onOpenChange]);
 
   return (
-    <Dialog open={bookmark !== null} onOpenChange={(v) => { if (!submitting) onOpenChange(v); }}>
+    <Dialog
+      open={bookmark !== null}
+      onOpenChange={(v) => {
+        if (!submitting) onOpenChange(v);
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>编辑书签</DialogTitle>
-          <DialogDescription>
-            修改标题、标签或描述。
-          </DialogDescription>
+          <DialogDescription>修改标题、标签或描述。</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
@@ -85,7 +88,7 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, f
             取消
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "保存中..." : "保存"}
+            {submitting ? '保存中...' : '保存'}
           </Button>
         </DialogFooter>
       </DialogContent>

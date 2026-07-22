@@ -1,8 +1,8 @@
-@import "tw-animate-css";
-@import "@fontsource-variable/inter";
+@import 'tw-animate-css';
+@import '@fontsource-variable/inter';
 
-@import "tailwindcss";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -38,7 +38,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -175,9 +174,14 @@
   --crepe-color-hover: #eceef4;
   --crepe-color-selected: #e1e2e8;
   --crepe-color-inline-area: #d8dae0;
-  --crepe-font-title: Rubik, -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
-  --crepe-font-default: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
-  --crepe-font-code: "JetBrains Mono", "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
+  --crepe-font-title:
+    Rubik, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Noto Sans SC',
+    'Segoe UI', sans-serif;
+  --crepe-font-default:
+    Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Noto Sans SC',
+    'Segoe UI', sans-serif;
+  --crepe-font-code:
+    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace;
   --crepe-shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   --crepe-shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
 }
@@ -201,8 +205,10 @@
     --crepe-color-hover: #1d2024;
     --crepe-color-selected: #32353a;
     --crepe-color-inline-area: #111418;
-    --crepe-shadow-1: 0px 1px 2px 0px rgba(255, 255, 255, 0.3), 0px 1px 3px 1px rgba(255, 255, 255, 0.15);
-    --crepe-shadow-2: 0px 1px 2px 0px rgba(255, 255, 255, 0.3), 0px 2px 6px 2px rgba(255, 255, 255, 0.15);
+    --crepe-shadow-1:
+      0px 1px 2px 0px rgba(255, 255, 255, 0.3), 0px 1px 3px 1px rgba(255, 255, 255, 0.15);
+    --crepe-shadow-2:
+      0px 1px 2px 0px rgba(255, 255, 255, 0.3), 0px 2px 6px 2px rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -225,7 +231,7 @@
 [data-tauri-drag-region] input,
 [data-tauri-drag-region] select,
 [data-tauri-drag-region] a,
-[data-tauri-drag-region] [role="button"] {
+[data-tauri-drag-region] [role='button'] {
   -webkit-app-region: no-drag;
   app-region: no-drag;
   user-select: auto;

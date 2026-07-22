@@ -1,12 +1,12 @@
-import type { NoteFile } from "../types";
-import type { FolderNode } from "./FolderTree";
+import type { NoteFile } from '../types';
+import type { FolderNode } from './FolderTree';
 
 export function buildFolderTree(notes: NoteFile[]): FolderNode[] {
   const rootMap = new Map<string, FolderNode>();
   for (const note of notes) {
-    const parts = note.relative_path.split("/");
+    const parts = note.relative_path.split('/');
     if (parts.length <= 1) continue;
-    let currentPath = "";
+    let currentPath = '';
     for (let i = 0; i < parts.length - 1; i++) {
       const parentPath = currentPath;
       currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
@@ -30,5 +30,5 @@ export function buildFolderTree(notes: NoteFile[]): FolderNode[] {
   for (const node of rootMap.values()) {
     node.children.sort((a, b) => a.name.localeCompare(b.name));
   }
-  return Array.from(rootMap.values()).filter((n) => !n.path.includes("/"));
+  return Array.from(rootMap.values()).filter((n) => !n.path.includes('/'));
 }

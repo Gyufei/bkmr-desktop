@@ -1,11 +1,11 @@
-import { Copy } from "lucide-react";
-import { useState, useCallback } from "react";
+import { Copy } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 
 export interface FolderNode {
   path: string;
@@ -47,8 +47,8 @@ function FolderTreeItem({
             }}
             className={`w-full flex items-center gap-1 px-2 py-1 text-sm rounded-md transition-colors text-left ${
               isSelected
-                ? "bg-primary/15"
-                : "text-muted-foreground hover:bg-accent/20 hover:text-foreground dark:hover:text-foreground"
+                ? 'bg-primary/15'
+                : 'text-muted-foreground hover:bg-accent/20 hover:text-foreground dark:hover:text-foreground'
             }`}
             style={{ paddingLeft: `${8 + depth * 16}px` }}
           >
@@ -63,7 +63,7 @@ function FolderTreeItem({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`shrink-0 transition-transform ${node.isExpanded ? "rotate-90" : ""}`}
+                className={`shrink-0 transition-transform ${node.isExpanded ? 'rotate-90' : ''}`}
               >
                 <path d="m9 18 6-6-6-6" />
               </svg>
@@ -75,7 +75,7 @@ function FolderTreeItem({
               width="14"
               height="14"
               viewBox="0 0 24 24"
-              fill={node.isExpanded ? "currentColor" : "none"}
+              fill={node.isExpanded ? 'currentColor' : 'none'}
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
@@ -88,7 +88,11 @@ function FolderTreeItem({
           </button>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => { navigator.clipboard.writeText(node.path).catch(() => {}); }}>
+          <ContextMenuItem
+            onClick={() => {
+              navigator.clipboard.writeText(node.path).catch(() => {});
+            }}
+          >
             <Copy className="h-4 w-4" />
             <span>复制路径</span>
           </ContextMenuItem>
@@ -143,9 +147,7 @@ export default function FolderTree({ tree, selectedPath, onSelect }: Props) {
   return (
     <div className="flex-1 overflow-y-auto thin-scrollbar py-1">
       {treeWithExpanded.length === 0 ? (
-        <div className="px-3 py-4 text-xs text-muted-foreground">
-          无文件夹
-        </div>
+        <div className="px-3 py-4 text-xs text-muted-foreground">无文件夹</div>
       ) : (
         treeWithExpanded.map((node) => (
           <FolderTreeItem
@@ -162,10 +164,7 @@ export default function FolderTree({ tree, selectedPath, onSelect }: Props) {
   );
 }
 
-function setExpandedRecursive(
-  nodes: FolderNode[],
-  expanded: Set<string>,
-): FolderNode[] {
+function setExpandedRecursive(nodes: FolderNode[], expanded: Set<string>): FolderNode[] {
   return nodes.map((node) => ({
     ...node,
     isExpanded: expanded.has(node.path),

@@ -1,37 +1,43 @@
-import { useState, useCallback, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Copy } from "lucide-react";
-import { useSettings } from "./useSettings";
-import { useBkmr } from "../bookmarks/useBkmr";
-import { useSystemInfo } from "./useSystemInfo";
+import { useState, useCallback, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Copy } from 'lucide-react';
+import { useSettings } from './useSettings';
+import { useBkmr } from '../bookmarks/useBkmr';
+import { useSystemInfo } from './useSystemInfo';
 
 function SettingsPage() {
   const settings = useSettings();
   const { backup } = useBkmr();
   const { info: sysInfo, load: loadSysInfo } = useSystemInfo();
 
-  const [backupDir, setBackupDir] = useState("");
-  const [notesDir, setNotesDir] = useState("");
+  const [backupDir, setBackupDir] = useState('');
+  const [notesDir, setNotesDir] = useState('');
   const [backupSaving, setBackupSaving] = useState(false);
   const [notesSaving, setNotesSaving] = useState(false);
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
   const [backupLoading, setBackupLoading] = useState(false);
 
-  useEffect(() => { loadSysInfo(); }, [loadSysInfo]);
-  useEffect(() => { settings.load(); }, []);
+  useEffect(() => {
+    loadSysInfo();
+  }, [loadSysInfo]);
+  useEffect(() => {
+    settings.load();
+  }, []);
 
   // Sync form fields when settings are loaded / change
   useEffect(() => {
-    setBackupDir(settings.settings.backup_dir ?? "");
-    setNotesDir(settings.settings.notes_dir ?? "");
+    setBackupDir(settings.settings.backup_dir ?? '');
+    setNotesDir(settings.settings.notes_dir ?? '');
   }, [settings.settings.backup_dir, settings.settings.notes_dir]);
 
   const handleCopy = useCallback(async (_key: string, text: string) => {
     try {
-     await navigator.clipboard.writeText(text);
-    } catch { /* silently ignore */ }
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* silently ignore */
+    }
   }, []);
 
   const handleBackupSave = useCallback(async () => {
@@ -70,19 +76,21 @@ function SettingsPage() {
             {sysInfo ? (
               <div className="space-y-2">
                 {[
-                  { key: "config_path", label: "bkmr 配置路径", value: sysInfo.bkmr_config_path },
-                  { key: "db_path", label: "SQLite 数据库路径", value: sysInfo.sqlite_db_path },
-                  { key: "onnx", label: "ONNX / 嵌入模型", value: sysInfo.onnx_available ? "已加载" : "未配置" },
-                  { key: "bkmr_version", label: "bkmr 版本", value: sysInfo.bkmr_version },
+                  { key: 'config_path', label: 'bkmr 配置路径', value: sysInfo.bkmr_config_path },
+                  { key: 'db_path', label: 'SQLite 数据库路径', value: sysInfo.sqlite_db_path },
+                  {
+                    key: 'onnx',
+                    label: 'ONNX / 嵌入模型',
+                    value: sysInfo.onnx_available ? '已加载' : '未配置',
+                  },
+                  { key: 'bkmr_version', label: 'bkmr 版本', value: sysInfo.bkmr_version },
                 ].map((item) => (
                   <div key={item.key} className="flex items-start justify-between gap-2">
                     <span className="text-xs font-medium text-muted-foreground shrink-0 mt-0.5">
                       {item.label}
                     </span>
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs text-foreground break-all">
-                        {item.value}
-                      </span>
+                      <span className="text-xs text-foreground break-all">{item.value}</span>
                       <button
                         onClick={() => handleCopy(item.key, item.value)}
                         className="shrink-0 p-0.5 rounded hover:bg-accent transition-colors"
@@ -120,16 +128,11 @@ function SettingsPage() {
                   onChange={(e) => setBackupDir(e.target.value)}
                   placeholder="留空则不自动备份"
                 />
-                <Button
-                  onClick={handleBackupSave}
-                  disabled={backupSaving}
-                >
-                  {backupSaving ? "保存..." : "保存"}
+                <Button onClick={handleBackupSave} disabled={backupSaving}>
+                  {backupSaving ? '保存...' : '保存'}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                应用启动时自动导出书签到该目录
-              </p>
+              <p className="text-xs text-muted-foreground mt-1.5">应用启动时自动导出书签到该目录</p>
             </div>
             <div>
               <Button
@@ -138,12 +141,10 @@ function SettingsPage() {
                 onClick={handleBackupNow}
                 disabled={backupLoading || !backupDir}
               >
-                {backupLoading ? "备份中..." : "立即备份"}
+                {backupLoading ? '备份中...' : '立即备份'}
               </Button>
               {backupStatus && (
-                <p className="text-xs text-muted-foreground mt-1.5 break-all">
-                  {backupStatus}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1.5 break-all">{backupStatus}</p>
               )}
             </div>
           </div>
@@ -163,11 +164,8 @@ function SettingsPage() {
                 onChange={(e) => setNotesDir(e.target.value)}
                 placeholder="输入 Obsidian 笔记目录路径"
               />
-              <Button
-                onClick={handleNotesSave}
-                disabled={notesSaving}
-              >
-                {notesSaving ? "保存..." : "保存"}
+              <Button onClick={handleNotesSave} disabled={notesSaving}>
+                {notesSaving ? '保存...' : '保存'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">

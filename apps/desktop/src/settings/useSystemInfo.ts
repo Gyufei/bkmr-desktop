@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 export interface SystemInfo {
   bkmr_config_path: string;
@@ -17,7 +17,7 @@ export function useSystemInfo() {
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
-      const result = await invoke<SystemInfo>("get_system_info");
+      const result = await invoke<SystemInfo>('get_system_info');
       setInfo(result);
     } finally {
       setLoading(false);

@@ -1,18 +1,19 @@
-import { useState, useCallback, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import type { NoteFile } from "../types";
+import { useState, useCallback, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import type { NoteFile } from '../types';
 
 export function useNotes() {
   const [notes, setNotes] = useState<NoteFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   // notify captures file changes and emits events
   useEffect(() => {
-    const unlisten1 = listen<NoteFile>("note-changed", (event) => {
+    const unlisten1 = listen<NoteFile>('note-changed', (event) => {
       const changed = event.payload;
-      setNotes(prev => {
-        const idx = prev.findIndex(n => n.path === changed.path);
+      setNotes((prev) => {
+        const idx = prev.findIndex((n) => n.path === changed.path);
         let next: NoteFile[];
         if (idx >= 0) {
           next = [...prev];
@@ -23,13 +24,13 @@ export function useNotes() {
         return next.sort((a, b) => a.title.localeCompare(b.title));
       });
     });
-    const unlisten2 = listen<string>("note-removed", (event) => {
+    const unlisten2 = listen<string>('note-removed', (event) => {
       const path = event.payload;
-      setNotes(prev => prev.filter(n => n.path !== path));
+      setNotes((prev) => prev.filter((n) => n.path !== path));
     });
     return () => {
-      unlisten1.then(fn => fn());
-      unlisten2.then(fn => fn());
+      unlisten1.then((fn) => fn());
+      unlisten2.then((fn) => fn());
     };
   }, []);
 
@@ -37,7 +38,7 @@ export function useNotes() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<NoteFile[]>("scan_notes", { dir });
+      const result = await invoke<NoteFile[]>('scan_notes', { dir });
       setNotes(result);
       return result;
     } catch (e) {
@@ -50,23 +51,23 @@ export function useNotes() {
   }, []);
 
   const readFile = useCallback(async (path: string): Promise<string> => {
-    return await invoke<string>("read_note_file", { path });
+    return await invoke<string>('read_note_file', { path });
   }, []);
 
   const saveFile = useCallback(async (path: string, content: string): Promise<void> => {
-    await invoke("write_note_file", { path, content });
+    await invoke('write_note_file', { path, content });
   }, []);
 
   const createFile = useCallback(async (dir: string, name: string): Promise<string> => {
-    return await invoke<string>("create_note_file", { dir, name });
+    return await invoke<string>('create_note_file', { dir, name });
   }, []);
 
   const deleteNote = useCallback(async (path: string): Promise<void> => {
-    await invoke("delete_note", { path });
+    await invoke('delete_note', { path });
   }, []);
 
   const renameNote = useCallback(async (oldPath: string, newPath: string): Promise<void> => {
-    await invoke("rename_note", { oldPath, newPath });
+    await invoke('rename_note', { oldPath, newPath });
   }, []);
 
   return { notes, loading, error, scanDir, readFile, saveFile, createFile, deleteNote, renameNote };
