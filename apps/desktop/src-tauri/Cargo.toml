@@ -22,3 +22,13 @@ tower-http = { version = "0.5", features = ["cors"] }
 notify = "8.2.0"
 bkmr_lib = { package = "bkmr", git = "https://github.com/sysid/bkmr", rev = "a6ca05ef4e20baa3c59d96653e8bdf734a27fca1" }
 dirs = "6"
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.
