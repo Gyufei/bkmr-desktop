@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import EditBookmarkDialog from './EditBookmarkDialog';
 import { tagColor } from '../lib/tagColor';
 import { open } from '@tauri-apps/plugin-shell';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeRecordBookmarkAccess } from '../lib/invoke';
 import type { Bookmark, Tag } from '../types';
 
 interface Props {
@@ -95,9 +95,13 @@ export default function ResultList({
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem
-              onClick={() => {
+              onClick={async () => {
                 open(bm.url);
-                invoke('record_bookmark_access', { id: bm.id }).catch(() => {});
+                try {
+                  await invokeRecordBookmarkAccess(bm.id);
+                } catch {
+                  console.error('Failed to record bookmark access');
+                }
               }}
             >
               <ExternalLink className="h-4 w-4" />
@@ -203,9 +207,13 @@ function BookmarkRow({
   bookmark: Bookmark;
   onRequestDelete: (bm: Bookmark) => void;
 }) {
-  const handleClick = () => {
+  const handleClick = async () => {
     open(bookmark.url);
-    invoke('record_bookmark_access', { id: bookmark.id }).catch(() => {});
+    try {
+      await invokeRecordBookmarkAccess(bookmark.id);
+    } catch {
+      console.error('Failed to record bookmark access');
+    }
   };
 
   return (

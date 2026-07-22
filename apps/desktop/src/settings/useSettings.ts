@@ -1,10 +1,6 @@
 import { useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeGetSettings, invokeUpdateSettings, type AppSettings } from '../lib/invoke';
 
-export interface AppSettings {
-  backup_dir: string | null;
-  notes_dir: string | null;
-}
 
 export function useSettings() {
   const [settings, setSettings] = useState<AppSettings>({
@@ -16,7 +12,7 @@ export function useSettings() {
   const load = useCallback(async (): Promise<AppSettings> => {
     setLoading(true);
     try {
-      const result = await invoke<AppSettings>('get_settings');
+      const result = await invokeGetSettings();
       setSettings(result);
       return result;
     } finally {
@@ -29,7 +25,7 @@ export function useSettings() {
       const merged = { ...settings, ...updated };
       setLoading(true);
       try {
-        await invoke('update_settings', { settings: merged });
+        await invokeUpdateSettings(merged);
         setSettings(merged);
         return merged;
       } finally {

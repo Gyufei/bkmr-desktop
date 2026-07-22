@@ -1,5 +1,14 @@
 import { useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import {
+  invokeLoadAllBookmarks,
+  invokeGetAllTags,
+  invokeBackupBookmarks,
+  invokeAddBookmark,
+  invokeHybridSearchBookmarks,
+  invokeDeleteBookmarks,
+  invokeCheckBookmark,
+  invokeUpdateBookmark,
+} from '../lib/invoke';
 import type { Bookmark, Tag } from '../types';
 
 export function useBkmr() {
@@ -12,7 +21,7 @@ export function useBkmr() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<Bookmark[]>('load_all_bookmarks');
+      const result = await invokeLoadAllBookmarks();
       setAllBookmarks(result);
       return result;
     } catch (e) {
@@ -26,19 +35,19 @@ export function useBkmr() {
 
   const fetchTags = useCallback(async (): Promise<Tag[]> => {
     try {
-      return await invoke<Tag[]>('get_all_tags');
+      return await invokeGetAllTags();
     } catch {
       return [];
     }
   }, []);
 
   const backup = useCallback(async (dir: string): Promise<string> => {
-    return await invoke<string>('backup_bookmarks', { dir });
+      return await invokeBackupBookmarks(dir);
   }, []);
 
   const addBookmark = useCallback(
     async (url: string, title: string, tags: string[], description?: string): Promise<number> => {
-      return await invoke<number>('add_bookmark', { url, title, tags, description });
+      return await invokeAddBookmark(url, title, tags, description);
     },
     [],
   );
@@ -47,7 +56,7 @@ export function useBkmr() {
     async (query: string, tags: string[]): Promise<Bookmark[]> => {
       setSearching(true);
       try {
-        return await invoke<Bookmark[]>('hybrid_search_bookmarks', { query, tags });
+        return await invokeHybridSearchBookmarks(query, tags);
       } finally {
         setSearching(false);
       }
@@ -56,12 +65,12 @@ export function useBkmr() {
   );
 
   const deleteBookmarks = useCallback(async (ids: number[]): Promise<number> => {
-    return await invoke<number>('delete_bookmarks', { ids });
+      return await invokeDeleteBookmarks(ids);
   }, []);
 
   const checkBookmark = useCallback(async (url: string): Promise<Bookmark | null> => {
     try {
-      return await invoke<Bookmark | null>('check_bookmark', { url });
+      return await invokeCheckBookmark(url);
     } catch {
       return null;
     }
@@ -69,7 +78,7 @@ export function useBkmr() {
 
   const updateBookmark = useCallback(
     async (id: number, title: string, tags: string[], description?: string): Promise<void> => {
-      await invoke('update_bookmark', { id, title, tags, description: description ?? null });
+      await invokeUpdateBookmark(id, title, tags, description);
     },
     [],
   );

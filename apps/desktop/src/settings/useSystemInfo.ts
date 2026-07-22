@@ -1,14 +1,6 @@
 import { useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeGetSystemInfo, type SystemInfo } from '../lib/invoke';
 
-export interface SystemInfo {
-  bkmr_config_path: string;
-  sqlite_db_path: string;
-  onnx_available: boolean;
-  bkmr_version: string;
-  bkmr_repo: string;
-  app_version: string;
-}
 
 export function useSystemInfo() {
   const [info, setInfo] = useState<SystemInfo | null>(null);
@@ -17,7 +9,7 @@ export function useSystemInfo() {
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
-      const result = await invoke<SystemInfo>('get_system_info');
+      const result = await invokeGetSystemInfo();
       setInfo(result);
     } finally {
       setLoading(false);

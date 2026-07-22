@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeGetServerStatus } from './lib/invoke';
 import { Button } from './components/ui/button';
 import { Bookmark, Notebook, Settings } from 'lucide-react';
 
@@ -41,9 +41,16 @@ export default function NavBar({
   }, []);
 
   useEffect(() => {
-    invoke<{ running: boolean }>('get_server_status')
-      .then((s) => setServerRunning(s.running))
-      .catch(() => {});
+    async function checkServerStatus() {
+      try {
+        const s = await invokeGetServerStatus();
+        setServerRunning(s.running);
+      } catch {
+        setServerRunning(false);
+      }
+    };
+
+    checkServerStatus();
   }, []);
 
   const switchTab = useCallback((id: TabId) => {

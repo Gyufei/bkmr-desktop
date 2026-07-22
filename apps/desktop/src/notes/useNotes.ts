@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import {
+  invokeScanNotes,
+  invokeReadNoteFile,
+  invokeWriteNoteFile,
+  invokeCreateNoteFile,
+  invokeDeleteNote,
+  invokeRenameNote,
+} from '../lib/invoke';
 import { listen } from '@tauri-apps/api/event';
 import type { NoteFile } from '../types';
 
@@ -38,7 +45,7 @@ export function useNotes() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<NoteFile[]>('scan_notes', { dir });
+      const result = await invokeScanNotes(dir);
       setNotes(result);
       return result;
     } catch (e) {
@@ -51,23 +58,23 @@ export function useNotes() {
   }, []);
 
   const readFile = useCallback(async (path: string): Promise<string> => {
-    return await invoke<string>('read_note_file', { path });
+    return await invokeReadNoteFile(path);
   }, []);
 
   const saveFile = useCallback(async (path: string, content: string): Promise<void> => {
-    await invoke('write_note_file', { path, content });
+    await invokeWriteNoteFile(path, content);
   }, []);
 
   const createFile = useCallback(async (dir: string, name: string): Promise<string> => {
-    return await invoke<string>('create_note_file', { dir, name });
+    return await invokeCreateNoteFile(dir, name);
   }, []);
 
   const deleteNote = useCallback(async (path: string): Promise<void> => {
-    await invoke('delete_note', { path });
+    await invokeDeleteNote(path);
   }, []);
 
   const renameNote = useCallback(async (oldPath: string, newPath: string): Promise<void> => {
-    await invoke('rename_note', { oldPath, newPath });
+    await invokeRenameNote(oldPath, newPath);
   }, []);
 
   return { notes, loading, error, scanDir, readFile, saveFile, createFile, deleteNote, renameNote };
