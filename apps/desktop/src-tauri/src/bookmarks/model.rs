@@ -80,6 +80,14 @@ impl AppError {
         )
     }
 
+    pub fn bookmark_url_not_found(url: impl Into<String>) -> Self {
+        Self::new(
+            "bookmark_not_found",
+            "Bookmark not found",
+            Some(serde_json::json!({ "url": url.into() })),
+        )
+    }
+
     pub fn bookmark_url_conflict(url: impl Into<String>) -> Self {
         Self::new(
             "bookmark_url_conflict",

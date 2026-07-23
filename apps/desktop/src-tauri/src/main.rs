@@ -1,4 +1,10 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+
+use bkmrx_lib::{
+    bookmarks::{BookmarkService, SqliteBookmarkRepository, SqliteFtsSearch},
+    database::Database,
+};
+use tauri::{Emitter, Manager};
 
 fn main() {
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
@@ -8,32 +14,35 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let handle = app.handle().clone();
+            let app_data_dir = app.path().app_data_dir()?;
+            let database = Arc::new(Database::open(app_data_dir.join("bookmarks.db"))?);
+            database.assert_fts5_trigram()?;
 
-            let config_path = dirs::home_dir().map(|h| h.join(".config/bkmr/config.toml"));
-            if let Err(e) = bkmrx_lib::container::init(config_path.as_deref()) {
-                eprintln!("bkmr container init error: {e}");
-                // 容器初始化失败不影响应用启动，但搜索/书签功能不可用
-            }
-
-            bkmrx_lib::notes::set_app_handle(handle.clone());
-            tauri::async_runtime::spawn(
-                bkmrx_lib::http_server::start_server(handle, shutdown_rx)
+            let notify_handle = handle.clone();
+            let service = Arc::new(
+                BookmarkService::new(
+                    SqliteBookmarkRepository::new(Arc::clone(&database)),
+                    SqliteFtsSearch::new(database),
+                )
+                .with_change_notifier(Arc::new(move || {
+                    let _ = notify_handle.emit("bookmarks-changed", ());
+                })),
             );
+
+            app.manage(Arc::clone(&service));
+            bkmrx_lib::notes::set_app_handle(handle);
+            tauri::async_runtime::spawn(bkmrx_lib::http_server::start_server(service, shutdown_rx));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            bkmrx_lib::commands::load_all_bookmarks,
-            bkmrx_lib::commands::get_all_tags,
-            bkmrx_lib::commands::backup_bookmarks,
-            bkmrx_lib::commands::add_bookmark,
-            bkmrx_lib::commands::delete_bookmarks,
-            bkmrx_lib::commands::check_bookmark,
-            bkmrx_lib::commands::show_bookmark,
+            bkmrx_lib::commands::query_bookmarks,
+            bkmrx_lib::commands::create_bookmark,
             bkmrx_lib::commands::update_bookmark,
-            bkmrx_lib::commands::scan_notes,
-            bkmrx_lib::commands::hybrid_search_bookmarks,
-
+            bkmrx_lib::commands::delete_bookmarks,
+            bkmrx_lib::commands::get_bookmark_by_url,
+            bkmrx_lib::commands::get_tags,
             bkmrx_lib::commands::record_bookmark_access,
+            bkmrx_lib::commands::scan_notes,
             bkmrx_lib::commands::read_note_file,
             bkmrx_lib::commands::write_note_file,
             bkmrx_lib::commands::create_note_file,
@@ -47,7 +56,11 @@ fn main() {
         .on_window_event(move |_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 bkmrx_lib::notes::stop_watcher();
-                if let Some(tx) = shutdown_tx.lock().unwrap_or_else(|e| e.into_inner()).take() {
+                if let Some(tx) = shutdown_tx
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .take()
+                {
                     let _ = tx.send(());
                 }
             }

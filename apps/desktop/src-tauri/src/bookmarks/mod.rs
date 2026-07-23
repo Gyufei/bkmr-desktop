@@ -1,6 +1,7 @@
 pub mod model;
 pub mod repository;
 pub mod search;
+pub mod service;
 
 pub use model::{
     AppError, AppResult, Bookmark, BookmarkPage, BookmarkPageRequest, CreateBookmark, TagSummary,
@@ -8,3 +9,4 @@ pub use model::{
 };
 pub use repository::{BookmarkRepository, SqliteBookmarkRepository};
 pub use search::{BookmarkSearch, SearchPage, SqliteFtsSearch};
+pub use service::{BookmarkService, SharedBookmarkService};

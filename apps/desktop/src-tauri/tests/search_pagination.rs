@@ -1,9 +1,10 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use bkmrx_lib::{
     bookmarks::{
-        BookmarkPageRequest, BookmarkRepository, BookmarkSearch, CreateBookmark,
-        SqliteBookmarkRepository, SqliteFtsSearch,
+        BookmarkPageRequest, BookmarkRepository, BookmarkSearch, BookmarkService, CreateBookmark,
+        SqliteBookmarkRepository, SqliteFtsSearch, UpdateBookmark,
     },
     database::Database,
 };
@@ -253,4 +254,80 @@ fn pages_contain_no_duplicates_or_omissions() {
             .unwrap(),
         ids.len() as i64
     );
+}
+
+#[test]
+fn service_query_hydrates_in_search_order_and_forwards_validation() {
+    let fixture = fixture();
+    let repository = SqliteBookmarkRepository::new(Arc::clone(&fixture.database));
+    let service = BookmarkService::new(repository, fixture.search);
+
+    let page = service.query(request("", &[], 3)).unwrap();
+
+    assert_eq!(
+        page.items
+            .iter()
+            .map(|bookmark| bookmark.id)
+            .collect::<Vec<_>>(),
+        vec![fixture.ids[6], fixture.ids[5], fixture.ids[4]]
+    );
+    assert_eq!(
+        service.query(request("", &[], 0)).unwrap_err().code(),
+        "validation_error"
+    );
+}
+
+#[test]
+fn service_maps_not_found_and_notifies_only_successful_mutations() {
+    let database = Arc::new(Database::open_in_memory().unwrap());
+    let notifications = Arc::new(AtomicUsize::new(0));
+    let notifier_count = Arc::clone(&notifications);
+    let service = BookmarkService::new(
+        SqliteBookmarkRepository::new(Arc::clone(&database)),
+        SqliteFtsSearch::new(database),
+    )
+    .with_change_notifier(Arc::new(move || {
+        notifier_count.fetch_add(1, Ordering::SeqCst);
+    }));
+
+    assert_eq!(
+        service.get_by_id(99).unwrap_err().code(),
+        "bookmark_not_found"
+    );
+    assert_eq!(notifications.load(Ordering::SeqCst), 0);
+
+    let created = service
+        .create(CreateBookmark {
+            url: "https://example.com".to_owned(),
+            title: "Example".to_owned(),
+            description: String::new(),
+            tags: vec!["one".to_owned()],
+        })
+        .unwrap();
+    service
+        .update(
+            created.id,
+            UpdateBookmark {
+                title: Some("Updated".to_owned()),
+                ..UpdateBookmark::default()
+            },
+        )
+        .unwrap();
+    service.record_access(created.id).unwrap();
+    assert_eq!(
+        service
+            .create(CreateBookmark {
+                url: "https://example.com".to_owned(),
+                title: "Duplicate".to_owned(),
+                description: String::new(),
+                tags: Vec::new(),
+            })
+            .unwrap_err()
+            .code(),
+        "bookmark_url_conflict"
+    );
+    service.delete_many(vec![created.id]).unwrap();
+    service.delete_many(Vec::new()).unwrap();
+
+    assert_eq!(notifications.load(Ordering::SeqCst), 4);
 }
