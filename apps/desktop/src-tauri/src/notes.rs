@@ -54,7 +54,7 @@ pub fn scan_notes(dir: &str) -> Result<Vec<NoteFile>, String> {
     }
     let mut notes = Vec::new();
     scan_dir(root, root, &mut notes)?;
-    notes.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    notes.sort_by_key(|note| note.title.to_lowercase());
     if let Some(handle) = APP_HANDLE.get() {
         start_watcher(dir, handle.clone());
     }
@@ -68,7 +68,7 @@ fn scan_dir(root: &Path, current: &Path, notes: &mut Vec<NoteFile>) -> Result<()
         let path = entry.path();
         if path.is_dir() {
             scan_dir(root, &path, notes)?;
-        } else if path.extension().map_or(false, |e| e == "md") {
+        } else if path.extension().is_some_and(|extension| extension == "md") {
             if let Some(note) = scan_note(root, &path) {
                 notes.push(note);
             }
@@ -108,7 +108,7 @@ fn start_watcher(dir: &str, app_handle: tauri::AppHandle) {
                 Err(_) => break, // sender dropped → watcher stopped
             };
             for path in &event.paths {
-                if path.extension().map_or(true, |e| e != "md") { continue; }
+                if path.extension().is_none_or(|extension| extension != "md") { continue; }
                 let kind = event.kind;
                 if matches!(kind, EventKind::Create(_) | EventKind::Modify(_)) {
                     if let Some(note) = scan_note(&root, path) {

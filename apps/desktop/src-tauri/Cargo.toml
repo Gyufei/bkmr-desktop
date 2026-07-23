@@ -7,21 +7,12 @@ edition = "2021"
 name = "bkmrx_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
-[features]
-default = []
-legacy-migration = ["dep:bkmr_lib"]
-
-[[bin]]
-name = "migrate_bkmr"
-path = "src/bin/migrate_bkmr.rs"
-required-features = ["legacy-migration"]
-
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
- tauri = { version = "2", features = [] }
- chrono = "0.4"
+tauri = { version = "2", features = [] }
+chrono = "0.4"
 tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -29,7 +20,6 @@ tokio = { version = "1", features = ["full"] }
 axum = "0.7"
 tower-http = { version = "0.5", features = ["cors"] }
 notify = "8.2.0"
-bkmr_lib = { package = "bkmr", git = "https://github.com/sysid/bkmr", rev = "a6ca05ef4e20baa3c59d96653e8bdf734a27fca1", optional = true }
 dirs = "6"
 url = "2"
 rusqlite = { version = "0.35", features = ["bundled", "backup"] }
