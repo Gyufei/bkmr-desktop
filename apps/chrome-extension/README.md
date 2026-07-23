@@ -6,15 +6,14 @@
 
 ## 概述
 
-bkmr 是一套命令行书签管理工具（[sysid/bkmr](https://github.com/sysid/bkmr)），
-bkmrx 是它的 Tauri 桌面客户端 ([Gyufei/bkmrx](https://github.com/Gyufei/bkmrx))
-bkmrx-chrome-ext 为客户端提供了浏览器端的快捷入口。
+bkmrx 是一个使用 Rust、Tauri 与 SQLite 构建的本地书签应用，
+bkmrx-chrome-ext 为它提供浏览器端的快捷入口。
 
 ```
-浏览器（本扩展） → HTTP API → bkmrx（后台服务） → bkmr CLI → SQLite
+浏览器（本扩展） → HTTP API → bkmrx BookmarkService → SQLite
 ```
 
-扩展本身没有独立的存储，所有书签数据都托管在 bkmr 的 SQLite 数据库中。
+扩展本身没有独立存储，SQLite 始终由 bkmrx 的 Rust 后端维护。
 
 ## 前置条件
 
@@ -33,7 +32,7 @@ bkmrx-chrome-ext 为客户端提供了浏览器端的快捷入口。
 
 ## 使用
 
-1. 确保 bkmrx 已启动（状态栏应有 bkmr 图标）
+1. 确保 bkmrx 已启动
 2. 在你感兴趣的任意网页上点击扩展图标
 3. 表单会自动填入当前页面的 URL 和标题
 4. 按需修改标题、添加标签
@@ -50,7 +49,7 @@ bkmrx-chrome-ext 为客户端提供了浏览器端的快捷入口。
 | 自动获取 URL | 读取当前活动标签页的地址 |
 | 自动获取标题 | 读取当前活动标签页的 `<title>` |
 | 手动编辑 | URL、标题、标签均可自由修改 |
-| 标签建议 | 从 bkmr 数据库拉取已有标签（按使用频率排序），点击即添加 |
+| 标签建议 | 从 bkmrx 拉取已有标签，点击即可添加 |
 | 表单验证 | URL 为空时阻止提交并提示 |
 | 连接检测 | bkmrx 未运行时显示友好提示 |
 | 成功反馈 | 添加成功后显示书签 ID 并清空表单 |
@@ -71,14 +70,27 @@ bkmrx-chrome-ext 为客户端提供了浏览器端的快捷入口。
   "tags": ["dev", "rust"]
 }
 
-// Response 201
+// Response 201（完整 Bookmark）
 {
   "id": 1234,
-  "status": "created"
+  "url": "https://example.com",
+  "title": "Example Title",
+  "description": "",
+  "tags": ["dev", "rust"],
+  "access_count": 0,
+  "created_at": "2026-07-23T12:00:00Z",
+  "updated_at": "2026-07-23T12:00:00Z",
+  "accessed_at": null
 }
 ```
 
-`title` 和 `tags` 均为可选字段；`title` 省略时自动使用 `url` 的值。
+### GET /api/bookmarks/by-url
+
+按完整 URL 查询书签。存在时返回完整 Bookmark，不存在时返回结构化的 `404`。
+
+### PATCH /api/bookmarks/:id
+
+更新标题、描述或完整标签集合，成功时返回更新后的完整 Bookmark。
 
 ### GET /api/tags
 
@@ -93,6 +105,22 @@ bkmrx-chrome-ext 为客户端提供了浏览器端的快捷入口。
 ```
 
 扩展只展示使用频率最高的 30 个。
+
+### 错误格式
+
+所有失败响应使用统一格式：
+
+```json
+{
+  "error": {
+    "code": "bookmark_url_conflict",
+    "message": "A bookmark with this URL already exists",
+    "details": { "url": "https://example.com" }
+  }
+}
+```
+
+扩展向用户展示 `error.message`，不依赖旧的 `duplicate`、`exists` 或顶层错误字符串。
 
 ## 目录结构
 

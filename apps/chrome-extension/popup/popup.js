@@ -1,4 +1,13 @@
-const BKMR_API = 'http://127.0.0.1:8733';
+const BKMRX_API = 'http://127.0.0.1:8733';
+
+async function parseApiResponse(response) {
+  if (response.status === 204) return null;
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error?.message || '请求失败');
+  }
+  return body;
+}
 
 document.addEventListener('alpine:init', () => {
   Alpine.data('popupApp', () => ({
@@ -51,8 +60,9 @@ document.addEventListener('alpine:init', () => {
 
     async checkConnection() {
       try {
-        const resp = await fetch(`${BKMR_API}/api/tags`);
-        this.connected = resp.ok;
+        const response = await fetch(`${BKMRX_API}/api/health`);
+        await parseApiResponse(response);
+        this.connected = true;
       } catch {
         this.connected = false;
       }
@@ -104,9 +114,8 @@ document.addEventListener('alpine:init', () => {
 
     async loadTagWhitelist() {
       try {
-        const resp = await fetch(`${BKMR_API}/api/tags`);
-        if (!resp.ok) return;
-        const tags = await resp.json();
+        const response = await fetch(`${BKMRX_API}/api/tags`);
+        const tags = await parseApiResponse(response);
         if (Array.isArray(tags)) {
           this.tagify.settings.whitelist = tags.map(t => t.name);
           this.tagify.dropdown.rebuild();
@@ -133,26 +142,22 @@ document.addEventListener('alpine:init', () => {
       this.existingBookmark = null;
       this.mode = 'create';
       try {
-        const resp = await fetch(
-          `${BKMR_API}/api/bookmarks/check?url=${encodeURIComponent(url)}`
+        const response = await fetch(
+          `${BKMRX_API}/api/bookmarks/by-url?url=${encodeURIComponent(url)}`
         );
-        if (!resp.ok) return;
-        const data = await resp.json();
-        if (data.exists && data.bookmark) {
-          this.existingBookmark = data.bookmark;
+        if (response.status === 404) return;
+        const bookmark = await parseApiResponse(response);
+        if (bookmark) {
+          this.existingBookmark = bookmark;
           this.mode = 'update';
-          const tags = data.bookmark.tags?.length
-            ? data.bookmark.tags.join(', ') : '\u65e0\u6807\u7b7e';
-          const desc = data.bookmark.description
-            ? ` \u2014 ${data.bookmark.description}` : '';
           this.bannerText = '\u5df2\u6536\u85cf';
           this.showBanner = true;
 
           // Populate tags into Tagify
-          this.setTags(data.bookmark.tags);
+          this.setTags(bookmark.tags);
           // Populate description into form
-          if (data.bookmark.description) {
-            this.form.description = data.bookmark.description;
+          if (bookmark.description) {
+            this.form.description = bookmark.description;
           }
         }
       } catch {}
@@ -174,53 +179,39 @@ document.addEventListener('alpine:init', () => {
         } else {
           await this._createBookmark(url, title, tags, description);
         }
-      } catch {
-        this.errorMessage = '\u65e0\u6cd5\u8fde\u63a5\u5230 bkmrx\uff0c\u8bf7\u786e\u8ba4\u5e94\u7528\u5df2\u542f\u52a8';
+      } catch (error) {
+        this.errorMessage = error instanceof Error
+          ? error.message
+          : '\u65e0\u6cd5\u8fde\u63a5\u5230 bkmrx\uff0c\u8bf7\u786e\u8ba4\u5e94\u7528\u5df2\u542f\u52a8';
       } finally {
         this.submitting = false;
       }
     },
 
     async _createBookmark(url, title, tags, description) {
-      const resp = await fetch(`${BKMR_API}/api/bookmarks`, {
+      const response = await fetch(`${BKMRX_API}/api/bookmarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, title, tags, description }),
       });
-      const data = await resp.json();
-      if (resp.ok) {
-        this.successMessage = `\u4e66\u7b7e\u5df2\u6dfb\u52a0 (ID: ${data.id})`;
-        this.existingBookmark = { id: data.id, url, title, tags };
-        const tagStr = tags.length ? tags.join(', ') : '\u65e0\u6807\u7b7e';
-        const descStr = description ? ` \u2014 ${description}` : '';
-        this.bannerText = '\u5df2\u6536\u85cf';
-        this.showBanner = true;
-        this.mode = 'update';
-        await this.loadTagWhitelist();
-      } else if (data.duplicate) {
-        this.errorMessage = '\u8be5\u4e66\u7b7e\u5df2\u5b58\u5728\uff0c\u8bf7\u4f7f\u7528\u66f4\u65b0\u529f\u80fd';
-        await this.checkExistingBookmark(url);
-      } else {
-        this.errorMessage = data.error || '\u6dfb\u52a0\u5931\u8d25';
-      }
+      const bookmark = await parseApiResponse(response);
+      this.successMessage = `\u4e66\u7b7e\u5df2\u6dfb\u52a0 (ID: ${bookmark.id})`;
+      this.existingBookmark = bookmark;
+      this.bannerText = '\u5df2\u6536\u85cf';
+      this.showBanner = true;
+      this.mode = 'update';
+      await this.loadTagWhitelist();
     },
 
     async _updateBookmark(title, tags, description) {
-      const resp = await fetch(
-        `${BKMR_API}/api/bookmarks/${this.existingBookmark.id}`,
-        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, tags, description }) }
+      const response = await fetch(
+        `${BKMRX_API}/api/bookmarks/${this.existingBookmark.id}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, tags, description }) }
       );
-      const data = await resp.json();
-      if (resp.ok) {
-        this.successMessage = `\u4e66\u7b7e\u5df2\u66f4\u65b0 (ID: ${this.existingBookmark.id})`;
-        this.existingBookmark.title = title;
-        this.existingBookmark.tags = tags;
-        const tagStr = tags.length ? tags.join(', ') : '\u65e0\u6807\u7b7e';
-        const descStr = description ? ` \u2014 ${description}` : '';
-        this.bannerText = '\u5df2\u6536\u85cf';
-      } else {
-        this.errorMessage = data.error || '\u66f4\u65b0\u5931\u8d25';
-      }
+      const bookmark = await parseApiResponse(response);
+      this.successMessage = `\u4e66\u7b7e\u5df2\u66f4\u65b0 (ID: ${bookmark.id})`;
+      this.existingBookmark = bookmark;
+      this.bannerText = '\u5df2\u6536\u85cf';
     },
   }));
 });
