@@ -2,8 +2,8 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::bookmarks::{
-    AppResult, Bookmark, BookmarkPage, BookmarkPageRequest, CreateBookmark, SharedBookmarkService,
-    TagSummary, UpdateBookmark,
+    AppResult, Bookmark, BookmarkPage, BookmarkPageRequest, CreateBookmark, ImportPreview,
+    SharedBookmarkService, TagSummary, UpdateBookmark,
 };
 
 #[tauri::command]
@@ -58,6 +58,33 @@ pub fn record_bookmark_access(
     id: i64,
 ) -> AppResult<Bookmark> {
     service.record_access(id)
+}
+
+#[tauri::command]
+pub fn export_bookmarks(
+    service: State<'_, SharedBookmarkService>,
+    directory: String,
+) -> AppResult<String> {
+    service
+        .export_bookmarks(directory)
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn preview_bookmark_import(
+    service: State<'_, SharedBookmarkService>,
+    path: String,
+) -> AppResult<ImportPreview> {
+    service.preview_bookmark_import(path)
+}
+
+#[tauri::command]
+pub fn apply_bookmark_import(
+    service: State<'_, SharedBookmarkService>,
+    path: String,
+    file_hash: String,
+) -> AppResult<ImportPreview> {
+    service.apply_bookmark_import(path, &file_hash)
 }
 
 #[tauri::command]

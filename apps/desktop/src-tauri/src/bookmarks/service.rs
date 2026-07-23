@@ -1,8 +1,12 @@
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use super::{
     AppResult, Bookmark, BookmarkPage, BookmarkPageRequest, BookmarkRepository, BookmarkSearch,
-    CreateBookmark, SqliteBookmarkRepository, SqliteFtsSearch, TagSummary, UpdateBookmark,
+    CreateBookmark, ImportPreview, SqliteBookmarkRepository, SqliteFtsSearch, TagSummary,
+    UpdateBookmark,
 };
 
 type ChangeNotifier = Arc<dyn Fn() + Send + Sync>;
@@ -80,3 +84,26 @@ impl<R: BookmarkRepository, S: BookmarkSearch> BookmarkService<R, S> {
 }
 
 pub type SharedBookmarkService = Arc<BookmarkService<SqliteBookmarkRepository, SqliteFtsSearch>>;
+
+impl BookmarkService<SqliteBookmarkRepository, SqliteFtsSearch> {
+    pub fn export_bookmarks(&self, directory: impl AsRef<Path>) -> AppResult<PathBuf> {
+        super::transfer::export_bookmarks(self.repository.database(), directory.as_ref())
+    }
+
+    pub fn preview_bookmark_import(&self, path: impl AsRef<Path>) -> AppResult<ImportPreview> {
+        super::transfer::preview_import(self.repository.database(), path.as_ref())
+    }
+
+    pub fn apply_bookmark_import(
+        &self,
+        path: impl AsRef<Path>,
+        file_hash: &str,
+    ) -> AppResult<ImportPreview> {
+        let preview =
+            super::transfer::apply_import(self.repository.database(), path.as_ref(), file_hash)?;
+        if preview.total > 0 {
+            (self.notify_changed)();
+        }
+        Ok(preview)
+    }
+}

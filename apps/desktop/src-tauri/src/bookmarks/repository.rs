@@ -29,6 +29,10 @@ impl SqliteBookmarkRepository {
     pub fn new(database: Arc<Database>) -> Self {
         Self { database }
     }
+
+    pub(crate) fn database(&self) -> &Arc<Database> {
+        &self.database
+    }
 }
 
 impl BookmarkRepository for SqliteBookmarkRepository {
@@ -36,7 +40,7 @@ impl BookmarkRepository for SqliteBookmarkRepository {
         let url = normalize_url(&input.url)?;
         let title = normalize_title(&input.title, &url);
         let tags = normalize_tags(input.tags);
-        let now = Utc::now().timestamp();
+        let now = Utc::now().timestamp_millis();
         let mut connection = self.database.connection()?;
         let transaction = connection.transaction().map_err(database_error)?;
 
@@ -69,7 +73,7 @@ impl BookmarkRepository for SqliteBookmarkRepository {
         let title = normalize_title(input.title.as_deref().unwrap_or(&existing.title), &url);
         let description = input.description.unwrap_or(existing.description);
         let tags = input.tags.map(normalize_tags).unwrap_or(existing.tags);
-        let now = Utc::now().timestamp();
+        let now = Utc::now().timestamp_millis();
         let mut connection = self.database.connection()?;
         let transaction = connection.transaction().map_err(database_error)?;
 
@@ -212,7 +216,7 @@ impl BookmarkRepository for SqliteBookmarkRepository {
                 "UPDATE bookmarks
                  SET access_count = access_count + 1, accessed_at = ?1
                  WHERE id = ?2",
-                params![Utc::now().timestamp(), id],
+                params![Utc::now().timestamp_millis(), id],
             )
             .map_err(database_error)?;
         if changed == 0 {
@@ -276,7 +280,11 @@ fn normalize_tags(tags: Vec<String>) -> Vec<String> {
         .collect()
 }
 
-fn replace_tags(transaction: &Transaction<'_>, bookmark_id: i64, tags: &[String]) -> AppResult<()> {
+pub(super) fn replace_tags(
+    transaction: &Transaction<'_>,
+    bookmark_id: i64,
+    tags: &[String],
+) -> AppResult<()> {
     transaction
         .execute(
             "DELETE FROM bookmark_tags WHERE bookmark_id = ?1",
@@ -302,7 +310,7 @@ fn replace_tags(transaction: &Transaction<'_>, bookmark_id: i64, tags: &[String]
     Ok(())
 }
 
-fn upsert_fts(
+pub(super) fn upsert_fts(
     transaction: &Transaction<'_>,
     id: i64,
     url: &str,
@@ -323,7 +331,7 @@ fn upsert_fts(
     Ok(())
 }
 
-fn remove_unused_tags(transaction: &Transaction<'_>) -> AppResult<()> {
+pub(super) fn remove_unused_tags(transaction: &Transaction<'_>) -> AppResult<()> {
     transaction
         .execute(
             "DELETE FROM tags
@@ -374,7 +382,7 @@ fn bookmark_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Bookmark> {
 }
 
 fn timestamp_to_string(timestamp: i64) -> Result<String, TimestampError> {
-    chrono::DateTime::<Utc>::from_timestamp(timestamp, 0)
+    chrono::DateTime::<Utc>::from_timestamp_millis(timestamp)
         .map(|value| value.to_rfc3339_opts(SecondsFormat::Secs, true))
         .ok_or(TimestampError(timestamp))
 }

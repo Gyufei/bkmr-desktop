@@ -49,6 +49,37 @@ pub struct UpdateBookmark {
     pub tags: Option<Vec<String>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct BookmarkExportV1 {
+    pub format_version: u32,
+    pub exported_at: String,
+    pub app_version: String,
+    pub bookmarks: Vec<BookmarkTransferRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct BookmarkTransferRecord {
+    pub url: String,
+    pub title: String,
+    pub description: String,
+    pub tags: Vec<String>,
+    pub access_count: i64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub accessed_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ImportPreview {
+    pub file_hash: String,
+    pub total: usize,
+    pub create_count: usize,
+    pub update_count: usize,
+    pub skip_count: usize,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, thiserror::Error)]
 #[error("{message}")]
 pub struct AppError {
