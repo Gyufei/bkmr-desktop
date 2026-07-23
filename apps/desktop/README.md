@@ -1,119 +1,97 @@
 # bkmrx
 
-[bkmr](https://github.com/sysid/bkmr) 书签管理命令行工具的桌面 GUI，基于 Tauri v2 构建。提供书签浏览、混合搜索（FTS5 + ONNX 语义嵌入）、标签筛选、Markdown 笔记编辑，以及可通过 Chrome 扩展调用的 HTTP API。
+bkmrx 是一个仅在 macOS 本机运行的 Tauri 书签与 Markdown 笔记工具。书签由 Rust 后端通过 `rusqlite` 直接维护，WebView、HTTP API 和 Chrome 扩展都通过同一个 `BookmarkService` 访问数据。
 
-## 功能
+## 书签能力
 
-- **书签混合搜索** — 通过 bkmr_lib (SQLite FTS5 + ONNX 语义嵌入) 实现混合搜索，支持全文检索与标签组合过滤
-- **标签聚合面板** — 按标签聚合浏览书签，点击快速过滤，支持多标签组合筛选
-- **书签管理** — 添加、编辑、删除书签；右键菜单支持打开链接、复制为 Markdown、记录访问次数
-- **自动备份** — 配置备份目录后，可一键导出全部书签为 JSON
-- **Markdown 笔记** — 集成 [Milkdown / Crepe](https://milkdown.dev) 编辑器，支持语法高亮（10+ 语言）、自动保存、Cmd+S 手动保存；按目录结构组织笔记
-- **文件系统监听** — 笔记目录变更实时同步到界面，无需手动刷新
-- **内置 HTTP API** — 启动后监听 `127.0.0.1:8733`，供 Chrome 扩展通过 REST API 增删改查书签，变更自动通知前端
-- **系统信息面板** — 查看 bkmr 配置路径、SQLite 数据库路径、ONNX 嵌入状态、bkmr 版本
-- **设置持久化** — 备份目录、笔记目录等配置保存至 `~/.bkmr/settings.json`
-- **深色/浅色主题** — 跟随系统外观
+- SQLite 是唯一事实来源，数据库位于 `~/Library/Application Support/com.bkmrx/bookmarks.db`。
+- `bookmarks`、`tags`、`bookmark_tags` 使用规范化关系模型。
+- 中文搜索使用 FTS5 Trigram；1–2 个 Unicode 字符使用安全参数化 LIKE 回退。
+- 默认列表、标签筛选、全文搜索和组合搜索统一使用不透明游标分页。
+- React 前端通过 TanStack Query `useInfiniteQuery` 每页加载 50 条。
+- 设置页支持 JSON v1 原子导出、严格预检、SHA-256 确认和事务合并导入。
+- 本机 HTTP API 监听 `127.0.0.1:8733`，供 Chrome 扩展使用。
 
-## 快速开始
+不包含语义搜索、向量索引、ONNX、sqlite-vec 或 WebView SQL 权限。
 
-### 前置依赖
+## 本地路径
 
-- [bkmr](https://github.com/sysid/bkmr) CLI — 后端依赖（需先配置好 bkmr 的 SQLite 数据库）
-- Rust toolchain（推荐通过 [rustup](https://rustup.rs) 安装）
-- Node.js >= 18
+| 内容 | 路径 |
+|---|---|
+| SQLite | `~/Library/Application Support/com.bkmrx/bookmarks.db` |
+| 设置 | `~/Library/Application Support/com.bkmrx/settings.json` |
+| 迁移备份根目录 | `/Users/gyf/MyLib/bkmr-sync/migration-backups/` |
 
-### 安装与运行
+不同 Mac 之间不直接同步 SQLite；使用设置页的 JSON 导出与导入。
+
+## 开发
+
+要求 Apple Silicon Mac、Rust toolchain、Node.js 18+ 和 pnpm。
 
 ```bash
-# 安装前端依赖
 pnpm install
+pnpm test
+pnpm build
 
-# 开发模式（热更新）
+cd src-tauri
+cargo test
+cargo clippy --all-targets -- -D warnings
+cd ..
+
 pnpm tauri dev
-
-# 构建生产版本
-pnpm tauri build
+pnpm tauri build -- --bundles app
 ```
 
-## 技术栈
+## 架构
 
-| 层 | 技术 |
-|---|---|
-| 前端框架 | React 18 + TypeScript + shadcn/ui |
-| 构建工具 | Vite 5 + pnpm |
-| 样式 | TailwindCSS 4 (CSS `@import` + `@theme`) |
-| 桌面框架 | Tauri 2 (Rust, 异步 tokio) |
-| HTTP 服务 | Axum (内嵌, `127.0.0.1:8733`) |
-| 搜索 | bkmr_lib (SQLite FTS5 + ONNX 语义嵌入) |
-| 编辑器 | Milkdown / Crepe |
-| 后端库 | bkmr（git rev pin） |
-| 图标 | Lucide React |
-| 文件监听 | notify (Rust crate) |
-| 字体 | Inter Variable |
-
-## 项目结构
-
+```text
+React / Tauri IPC ─┐
+                   ├─ BookmarkService ─ Repository ─ SQLite
+Chrome / Axum API ─┘                  └─ BookmarkSearch ─ FTS5 Trigram
 ```
-bkmrx/
-├── src/                            # React 前端
-│   ├── bookmarks/                  # 书签模块
-│   │   ├── BookmarkView.tsx        #   主视图（搜索栏+标签+结果列表）
-│   │   ├── SearchBar.tsx           #   搜索输入（Enter/点击触发）
-│   │   ├── TagPanel.tsx            #   标签筛选面板
-│   │   ├── ResultList.tsx          #   书签列表（无限滚动 IntersectionObserver）
-│   │   ├── AddBookmarkDialog.tsx   #   添加书签对话框
-│   │   ├── EditBookmarkDialog.tsx  #   编辑书签对话框
-│   │   └── useBkmr.ts             #   书签 CRUD / 搜索 Hook
-│   ├── notes/                      # 笔记模块
-│   │   ├── NotesPanel.tsx          #   主面板（文件夹树 + 文件列表 + 编辑器）
-│   │   ├── NoteEditor.tsx          #   Milkdown/Crepe Markdown 编辑器
-│   │   ├── FolderTree.tsx          #   文件夹树（嵌套折叠）
-│   │   ├── buildFolderTree.ts      #   从 NoteFile[] 构建树结构
-│   │   └── useNotes.ts             #   笔记 CRUD / 文件监听 Hook
-│   ├── settings/                   # 设置模块
-│   │   ├── SettingsPage.tsx        #   设置页面（系统信息、备份、笔记目录）
-│   │   ├── useSettings.ts          #   设置读写 Hook
-│   │   └── useSystemInfo.ts        #   系统信息 Hook
-│   ├── components/                 # 共享组件
-│   │   ├── TagInput.tsx            #   标签输入（自动完成、箭头导航）
-│   │   └── ui/                    #   shadcn/ui 原始组件
-│   ├── lib/                        # 工具函数
-│   │   ├── invoke.ts               #   Tauri IPC 类型化封装
-│   │   ├── tagColor.ts             #   标签色彩（hash → HSL）
-│   │   └── utils.ts                #   cn() 工具
-│   ├── types.ts                    # 共享 TypeScript 类型
-│   ├── App.tsx                     # 根组件
-│   ├── Layout.tsx                  # 布局（导航栏 + 页面路由）
-│   ├── Navbar.tsx                  # 顶部导航栏（标签切换 + 服务器状态指示）
-│   ├── main.tsx                    # 入口
-│   └── App.css                     # 全局样式（shadcn 令牌 + Crepe 主题 + 滚动条）
-├── src-tauri/                      # Rust 后端
-│   └── src/
-│       ├── main.rs                 # Tauri 入口（插件注册、容器初始化、HTTP 服务启动）
-│       ├── lib.rs                  # 模块声明
-│       ├── commands.rs             # Tauri IPC 命令处理（书签、搜索、笔记、设置、系统信息）
-│       ├── container.rs            # bkmr ServiceContainer 全局单例（OnceLock）
-│       ├── http_server.rs          # Axum HTTP API（供 Chrome 扩展调用，含文档 `/api/docs`）
-│       ├── notes.rs                # 笔记文件扫描、读写、文件系统监听（notify crate）
-│       └── settings.rs             # `~/.bkmr/settings.json` 读写
-├── package.json
-├── vite.config.ts
-└── pnpm-lock.yaml
-```
+
+`BookmarkSearch` 是可替换边界。将来可以增加 Meilisearch 实现，但 SQLite 继续作为唯一事实来源，上层分页与 DTO 不变。
+
+Rust 书签代码位于 `src-tauri/src/bookmarks/`：
+
+- `repository.rs`：CRUD、标签关系和 FTS 同事务维护；
+- `search.rs`：Trigram、短查询 LIKE 和游标；
+- `service.rs`：Tauri 与 HTTP 共用的业务入口；
+- `transfer.rs`：永久保留的 JSON v1 导入导出。
 
 ## HTTP API
 
-应用启动后自动在 `127.0.0.1:8733` 提供 REST API，访问 `/api/docs` 查看完整文档。
+应用启动后可访问 `http://127.0.0.1:8733/api/docs`。
 
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/tags` | 获取所有标签及计数 |
-| POST | `/api/bookmarks` | 添加书签 |
-| GET | `/api/bookmarks/:id` | 获取书签详情 |
-| PUT | `/api/bookmarks/:id` | 更新书签 |
-| DELETE | `/api/bookmarks/:id` | 删除书签 |
-| GET | `/api/bookmarks/check?url=` | 检查 URL 是否已存在 |
+|---|---|---|
+| GET | `/api/health` | 健康检查 |
+| GET | `/api/bookmarks` | 查询与游标分页 |
+| POST | `/api/bookmarks` | 创建 |
+| GET | `/api/bookmarks/by-url?url=` | 按 URL 查询 |
+| GET | `/api/bookmarks/:id` | 按 ID 查询 |
+| PATCH | `/api/bookmarks/:id` | 局部更新 |
+| DELETE | `/api/bookmarks/:id` | 删除 |
+| GET | `/api/tags` | 标签与计数 |
+
+错误统一返回：
+
+```json
+{
+  "error": {
+    "code": "bookmark_url_conflict",
+    "message": "A bookmark with this URL already exists",
+    "details": {}
+  }
+}
+```
+
+## 迁移与回滚
+
+- [迁移操作手册](docs/migration/runbook.md)
+- [回滚操作手册](docs/migration/rollback.md)
+
+一次性 BKMR 迁移工具只在 `legacy-migration` feature 下构建，并在真实迁移成功后从源码删除。日常跨设备传输只使用 JSON v1。
 
 ## 许可证
 
