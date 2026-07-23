@@ -27,8 +27,5 @@ export function buildFolderTree(notes: NoteFile[]): FolderNode[] {
       }
     }
   }
-  for (const node of rootMap.values()) {
-    node.children.sort((a, b) => a.name.localeCompare(b.name));
-  }
   return Array.from(rootMap.values()).filter((n) => !n.path.includes('/'));
 }

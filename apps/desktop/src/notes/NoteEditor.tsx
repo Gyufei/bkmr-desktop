@@ -3,8 +3,8 @@ import { Crepe } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/nord.css';
 import { MilkdownCreapConfig } from './config';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { NotesQueryApiKey, readNoteContentApi, writeNoteContentApi } from './notes.api';
+import { useMutation } from '@tanstack/react-query';
+import { readNoteContentApi, writeNoteContentApi } from './notes.api';
 
 interface Props {
   filePath: string;
@@ -19,8 +19,6 @@ function stripFrontmatter(content: string): string {
 }
 
 export default function NoteEditor({ filePath }: Props) {
-  const queryClient = useQueryClient();
-
   const containerRef = useRef<HTMLDivElement>(null);
   const crepeRef = useRef<Crepe | null>(null);
   
@@ -34,10 +32,7 @@ export default function NoteEditor({ filePath }: Props) {
   const [readError, setReadError] = useState<Error | null>(null);
 
   const { mutate: save, error: saveError, isSuccess: isSaveSuccess, isPending: isSaving } = useMutation({
-    mutationFn: writeNoteContentApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [NotesQueryApiKey.NOTES] });
-    },
+    mutationFn: writeNoteContentApi
   });
 
   // 1. 核心保存逻辑：显式绑定保存时的 targetPath 与 targetContent

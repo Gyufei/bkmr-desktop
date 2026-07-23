@@ -74,9 +74,10 @@ export default function NotesPanel() {
           next = [...old];
           next[idx] = changed;
         } else {
-          next = [...old, changed];
+          next = [changed, ...old];
         }
-        return next.sort((a, b) => a.title.localeCompare(b.title));
+
+        return next;
       });
     });
 
