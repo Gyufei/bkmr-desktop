@@ -168,7 +168,21 @@ impl Database {
         Ok(database)
     }
 
-    fn connection(&self) -> AppResult<MutexGuard<'_, Connection>> {
+    #[doc(hidden)]
+    pub fn execute_batch_for_test(&self, sql: &str) -> AppResult<()> {
+        self.connection()?
+            .execute_batch(sql)
+            .map_err(database_error)
+    }
+
+    #[doc(hidden)]
+    pub fn query_i64_for_test(&self, sql: &str) -> AppResult<i64> {
+        self.connection()?
+            .query_row(sql, [], |row| row.get(0))
+            .map_err(database_error)
+    }
+
+    pub(crate) fn connection(&self) -> AppResult<MutexGuard<'_, Connection>> {
         self.connection
             .lock()
             .map_err(|_| AppError::internal_error("database lock is poisoned"))
