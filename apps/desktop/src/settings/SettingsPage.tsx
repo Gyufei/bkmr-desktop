@@ -3,34 +3,42 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Copy } from 'lucide-react';
-import { useSettings } from './useSettings';
-import { useBkmr } from '../bookmarks/useBkmr';
-import { useSystemInfo } from './useSystemInfo';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { backupBookmarksApi } from '@/bookmarks/backend.api';
+import { getSettingsApi, getSystemInfoApi, SettingsQueryApiKey, updateSettingsApi } from '@/settings/backend.api';
 
 function SettingsPage() {
-  const settings = useSettings();
-  const { backup } = useBkmr();
-  const { info: sysInfo, load: loadSysInfo } = useSystemInfo();
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading: _isLoadingSettings } = useQuery({
+    queryKey: [SettingsQueryApiKey.SETTINGS],
+    queryFn: getSettingsApi,
+  });
+
+  const { data: sysInfo, isLoading: _isLoadingSysInfo } = useQuery({
+    queryKey: [SettingsQueryApiKey.SYSTEM_INFO],
+    queryFn: getSystemInfoApi,
+  });
+
+  const { mutate: handleUpdate, isPending: isUpdatingSettings } = useMutation({
+    mutationFn: updateSettingsApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+  });
+
+  const { data: backupResult, mutate: handleBackup, isPending: isBackupPending, isSuccess: isBackupSuccess } = useMutation({
+    mutationFn: backupBookmarksApi,
+  });
 
   const [backupDir, setBackupDir] = useState('');
   const [notesDir, setNotesDir] = useState('');
-  const [backupSaving, setBackupSaving] = useState(false);
-  const [notesSaving, setNotesSaving] = useState(false);
-  const [backupStatus, setBackupStatus] = useState<string | null>(null);
-  const [backupLoading, setBackupLoading] = useState(false);
-
-  useEffect(() => {
-    loadSysInfo();
-  }, [loadSysInfo]);
-  useEffect(() => {
-    settings.load();
-  }, []);
 
   // Sync form fields when settings are loaded / change
   useEffect(() => {
-    setBackupDir(settings.settings.backup_dir ?? '');
-    setNotesDir(settings.settings.notes_dir ?? '');
-  }, [settings.settings.backup_dir, settings.settings.notes_dir]);
+    setBackupDir(settings?.backup_dir ?? '');
+    setNotesDir(settings?.notes_dir ?? '');
+  }, [settings?.backup_dir, settings?.notes_dir]);
 
   const handleCopy = useCallback(async (_key: string, text: string) => {
     try {
@@ -40,31 +48,29 @@ function SettingsPage() {
     }
   }, []);
 
-  const handleBackupSave = useCallback(async () => {
-    setBackupSaving(true);
-    await settings.save({ backup_dir: backupDir || null });
-    setBackupSaving(false);
-  }, [backupDir, settings.save]);
+  function handleBackupSave() {
+    if (!settings) return;
 
-  const handleNotesSave = useCallback(async () => {
-    setNotesSaving(true);
-    await settings.save({ notes_dir: notesDir || null });
-    setNotesSaving(false);
-  }, [notesDir, settings.save]);
+    handleUpdate({
+      ...settings,
+      backup_dir: backupDir || null,  
+    });
+  }
 
-  const handleBackupNow = useCallback(async () => {
+  function handleNotesSave() {
+    if (!settings) return;
+
+    handleUpdate({
+      ...settings,
+      notes_dir: notesDir || null,
+    });
+  }
+
+  function handleBackupNow() {
     if (!backupDir) return;
-    setBackupLoading(true);
-    setBackupStatus(null);
-    try {
-      const path = await backup(backupDir);
-      setBackupStatus(`已备份到: ${path}`);
-    } catch (e) {
-      setBackupStatus(`备份失败: ${e}`);
-    } finally {
-      setBackupLoading(false);
-    }
-  }, [backupDir, backup]);
+
+    handleBackup(backupDir);
+  }
 
   return (
     <div className="flex-1 overflow-y-auto thin-scrollbar">
@@ -128,8 +134,8 @@ function SettingsPage() {
                   onChange={(e) => setBackupDir(e.target.value)}
                   placeholder="留空则不自动备份"
                 />
-                <Button onClick={handleBackupSave} disabled={backupSaving}>
-                  {backupSaving ? '保存...' : '保存'}
+                <Button onClick={handleBackupSave} disabled={isBackupPending}>
+                  {isBackupPending ? '保存...' : '保存'}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">应用启动时自动导出书签到该目录</p>
@@ -139,12 +145,12 @@ function SettingsPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleBackupNow}
-                disabled={backupLoading || !backupDir}
+                disabled={isBackupPending || !backupDir}
               >
-                {backupLoading ? '备份中...' : '立即备份'}
+                {isBackupPending ? '备份中...' : '立即备份'}
               </Button>
-              {backupStatus && (
-                <p className="text-xs text-muted-foreground mt-1.5 break-all">{backupStatus}</p>
+              {isBackupSuccess && (
+                <p className="text-xs text-muted-foreground mt-1.5 break-all">{backupResult}</p>
               )}
             </div>
           </div>
@@ -164,8 +170,8 @@ function SettingsPage() {
                 onChange={(e) => setNotesDir(e.target.value)}
                 placeholder="输入 Obsidian 笔记目录路径"
               />
-              <Button onClick={handleNotesSave} disabled={notesSaving}>
-                {notesSaving ? '保存...' : '保存'}
+              <Button onClick={handleNotesSave} disabled={isUpdatingSettings}>
+                {isUpdatingSettings ? '保存...' : '保存'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">

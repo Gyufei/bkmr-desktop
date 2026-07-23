@@ -65,6 +65,9 @@ importers:
       '@milkdown/crepe':
         specifier: ^7.21.3
         version: 7.21.3(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.1)(typescript@5.5.2)
+      '@tanstack/react-query':
+        specifier: ^5.101.3
+        version: 5.101.3(react@18.3.1)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.11.1
@@ -983,6 +986,14 @@ packages:
     resolution: {integrity: sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
+
+  '@tanstack/query-core@5.101.3':
+    resolution: {integrity: sha512-pWLyu7AjFFVM5G+frjcL81kKEW9R8GCCPKnL3uaWbMwd2f3ZINFCuy+PtKkdz/+pKw/f/XMsFsYq/H+uJHM4GQ==}
+
+  '@tanstack/react-query@5.101.3':
+    resolution: {integrity: sha512-ZjgcRwmQUSCythDPj6pE2NKFi9bpQegxIBxgt3hPytXI1ElFHNaa3A7aWW8vFaLCIRjPv467rbREYHbxcdgQbg==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@tauri-apps/api@2.11.1':
     resolution: {integrity: sha512-M2FPuYND2m+wh5hfW9ZpSdxMPdEJovPBWwoHJmwUpysTYNHaOkVFN419m/K0LIgjb/7KU2vBgsUepJWugQCvAA==}
@@ -3942,6 +3953,13 @@ snapshots:
       '@tailwindcss/oxide': 4.3.3
       tailwindcss: 4.3.3
       vite: 5.4.0(lightningcss@1.32.0)
+
+  '@tanstack/query-core@5.101.3': {}
+
+  '@tanstack/react-query@5.101.3(react@18.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.101.3
+      react: 18.3.1
 
   '@tauri-apps/api@2.11.1': {}
 

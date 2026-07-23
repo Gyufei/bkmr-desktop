@@ -1,8 +1,12 @@
 import { Copy, Trash2 } from 'lucide-react';
 import { buildFolderTree } from './buildFolderTree';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { listen } from '@tauri-apps/api/event';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { invokeReadNoteFile, invokeWriteNoteFile } from '../lib/invoke';
+import { getSettings, BkQueryApiKey as BkQueryApiKey } from '@/bookmarks/backend.api';
 import { tagColor } from '../lib/tagColor';
 import {
   ContextMenu,
@@ -20,8 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import FolderTree from './FolderTree';
 import NoteEditor from './NoteEditor';
-import { useNotes } from './useNotes';
-import { useSettings } from '../settings/useSettings';
+import { scanNotesDirectoryApi, createNoteApi, deleteNoteFileApi, QueryApiKey } from './backend-api';
 import type { NoteFile } from '../types';
 
 function formatTime(unix: number): string {
@@ -34,8 +37,7 @@ function formatTime(unix: number): string {
 }
 
 export default function NotesPanel() {
-  const settings = useSettings();
-  const { notes, loading, error, scanDir, readFile, saveFile, createFile, deleteNote } = useNotes();
+  const queryClient = useQueryClient();
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
@@ -43,19 +45,74 @@ export default function NotesPanel() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [newFileError, setNewFileError] = useState<string | null>(null);
-  const [notesDir, setNotesDir] = useState<string | null>(null);
 
-  // Load settings on mount; if notes_dir is set, scan immediately
+  // Settings — fetch notes_dir
+  const { data: settings } = useQuery({
+    queryKey: [BkQueryApiKey.SETTINGS],
+    queryFn: getSettings,
+  });
+  const notesDir = settings?.notes_dir ?? null;
+
+  // Scan notes directory
+  const { data: notes = [], isLoading: loading, error } = useQuery({
+    queryKey: [QueryApiKey.NOTES, notesDir],
+    queryFn: () => scanNotesDirectoryApi(notesDir!),
+    enabled: !!notesDir,
+  });
+
+  // File watcher: note-changed / note-removed → update query cache in-place
   useEffect(() => {
-    settings.load().then((s) => {
-      if (s.notes_dir) {
-        setNotesDir(s.notes_dir);
-        scanDir(s.notes_dir).catch(() => {});
-      } else {
-        setNotesDir(null);
-      }
+    if (!notesDir) return;
+
+    const unlisten1 = listen<NoteFile>('note-changed', (event) => {
+      queryClient.setQueryData([QueryApiKey.NOTES, notesDir], (old: NoteFile[] | undefined) => {
+        if (!old) return old;
+        const changed = event.payload;
+        const idx = old.findIndex((n) => n.path === changed.path);
+        let next: NoteFile[];
+        if (idx >= 0) {
+          next = [...old];
+          next[idx] = changed;
+        } else {
+          next = [...old, changed];
+        }
+        return next.sort((a, b) => a.title.localeCompare(b.title));
+      });
     });
-  }, []);
+
+    const unlisten2 = listen<string>('note-removed', (event) => {
+      queryClient.setQueryData([QueryApiKey.NOTES, notesDir], (old: NoteFile[] | undefined) => {
+        if (!old) return old;
+        return old.filter((n) => n.path !== event.payload);
+      });
+    });
+
+    return () => {
+      unlisten1.then((fn) => fn());
+      unlisten2.then((fn) => fn());
+    };
+  }, [queryClient, notesDir]);
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: createNoteApi,
+    onSuccess: (filePath) => {
+      setShowNewModal(false);
+      setNewFileName('');
+      setSelectedFilePath(filePath);
+      queryClient.invalidateQueries({ queryKey: [QueryApiKey.NOTES, notesDir] });
+    },
+    onError: (e: Error) => {
+      setNewFileError(e.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (path: string) => deleteNoteFileApi(path),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QueryApiKey.NOTES, notesDir] });
+    },
+  });
 
   const folderTree = useMemo(() => buildFolderTree(notes), [notes]);
 
@@ -73,29 +130,20 @@ export default function NotesPanel() {
     return result;
   }, [notes, selectedFolder, searchQuery]);
 
-  const handleSelectFile = useCallback(async (note: NoteFile) => {
+  const handleSelectFile = useCallback((note: NoteFile) => {
     setSelectedFilePath(note.path);
   }, []);
 
-  const handleCreate = useCallback(async () => {
+  const handleCreate = useCallback(() => {
     const name = newFileName.trim();
     if (!name) {
       setNewFileError('请输入文件名');
       return;
     }
     setNewFileError(null);
-    try {
-      const targetDir = selectedFolder ? `${notesDir}/${selectedFolder}` : notesDir!;
-      const filePath = await createFile(targetDir, name);
-      const updatedNotes = await scanDir(notesDir!);
-      setShowNewModal(false);
-      setNewFileName('');
-      const newNote = updatedNotes.find((n) => n.path === filePath);
-      if (newNote) handleSelectFile(newNote);
-    } catch (e) {
-      setNewFileError(String(e));
-    }
-  }, [newFileName, notesDir, selectedFolder, createFile, scanDir, handleSelectFile]);
+    const targetDir = selectedFolder ? `${notesDir}/${selectedFolder}` : notesDir!;
+    createMutation.mutate({ dir: targetDir, name });
+  }, [newFileName, notesDir, selectedFolder, createMutation]);
 
   if (!notesDir) {
     return (
@@ -130,7 +178,7 @@ export default function NotesPanel() {
       </div>
 
       {error && (
-        <div className="shrink-0 px-4 py-2 text-sm text-destructive bg-destructive/10">{error}</div>
+        <div className="shrink-0 px-4 py-2 text-sm text-destructive bg-destructive/10">{error.message}</div>
       )}
 
       <div className="flex-1 flex overflow-hidden">
@@ -187,13 +235,13 @@ export default function NotesPanel() {
               </Button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto thin-scrollbar">
+            <div className="flex-1 overflow-y-auto thin-scrollbar">
             {loading ? (
-              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                <div className="w-4 h-4 mr-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                扫描中...
-              </div>
-            ) : filteredNotes.length === 0 ? (
+                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 mr-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  扫描中...
+                </div>
+              ) : filteredNotes.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">无匹配笔记</div>
             ) : (
               <div className="space-y-0.5 px-2 pb-2">
@@ -239,7 +287,7 @@ export default function NotesPanel() {
                       <ContextMenuSeparator />
                       <ContextMenuItem
                         onClick={() => {
-                          deleteNote(note.path).catch(() => {});
+                          deleteMutation.mutate(note.path);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -255,7 +303,7 @@ export default function NotesPanel() {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {selectedFilePath ? (
-            <NoteEditor filePath={selectedFilePath} readFile={readFile} onSave={saveFile} />
+            <NoteEditor filePath={selectedFilePath} readFile={invokeReadNoteFile} onSave={invokeWriteNoteFile} />
           ) : (
             <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
               选择左侧笔记查看内容

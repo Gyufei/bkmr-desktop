@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,45 +12,54 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import TagInput from '@/components/TagInput';
-import type { Bookmark, Tag } from '../types';
+import type { Bookmark } from '../types';
+import { BkQueryApiKey, updateBookmarkApi } from './backend.api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Props {
-  bookmark: Bookmark | null;
-  onOpenChange: (open: boolean) => void;
-  onUpdate: (id: number, title: string, tags: string[], description?: string) => Promise<void>;
-  fetchTags: () => Promise<Tag[]>;
+  editTarget: Bookmark | null;
+  setEditTarget: (bookmark: Bookmark | null) => void;
 }
 
-export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, fetchTags }: Props) {
+export default function EditBookmarkDialog({ editTarget, setEditTarget }: Props) {
+  const queryClient = useQueryClient();
+
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (bookmark) {
-      setTitle(bookmark.title || '');
-      setTags(bookmark.tags);
-      setDescription(bookmark.description || '');
+    if (editTarget) {
+      setTitle(editTarget.title || '');
+      setTags(editTarget.tags);
+      setDescription(editTarget.description || '');
     }
-  }, [bookmark]);
+  }, [editTarget]);
 
-  const handleSubmit = useCallback(async () => {
-    if (!bookmark) return;
-    setSubmitting(true);
-    try {
-      await onUpdate(bookmark.id, title.trim(), tags, description.trim() || undefined);
-      onOpenChange(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }, [bookmark, title, tags, description, onUpdate, onOpenChange]);
+  const { mutate: handleUpdate, isPending: isUpdating, error: updateError } = useMutation({
+    mutationFn: updateBookmarkApi,
+    onSuccess: () => {
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: [BkQueryApiKey.ALL_BOOKMARKS, BkQueryApiKey.TAGS] });
+    },
+  });
+
+  function handleSubmit() {
+    if (!editTarget || isUpdating) return;
+
+    handleUpdate({
+      id: editTarget.id,
+      title: title.trim(),
+      tags: tags,
+      description: description.trim() || undefined,
+    });
+  }
 
   return (
     <Dialog
-      open={bookmark !== null}
-      onOpenChange={(v) => {
-        if (!submitting) onOpenChange(v);
+      open={editTarget !== null}
+      onOpenChange={(open) => {
+        if (!open) setEditTarget(null);
       }}
     >
       <DialogContent>
@@ -71,7 +80,7 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, f
           </div>
           <div className="space-y-2">
             <Label>标签（可选）</Label>
-            <TagInput value={tags} onChange={setTags} fetchTags={fetchTags} />
+            <TagInput value={tags} onChange={setTags} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-description">描述（可选）</Label>
@@ -82,13 +91,18 @@ export default function EditBookmarkDialog({ bookmark, onOpenChange, onUpdate, f
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+          {updateError && (
+            <div className="text-destructive">
+              更新失败：{updateError.message}
+            </div>
+          )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button variant="outline" onClick={() => setEditTarget(null)} disabled={isUpdating}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? '保存中...' : '保存'}
+          <Button onClick={handleSubmit} disabled={isUpdating}>
+            {isUpdating ? '保存中...' : '保存'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -2,12 +2,12 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { tagColor } from '../lib/tagColor';
-import type { Tag } from '../types';
+import { useQuery } from '@tanstack/react-query';
+import { getAllTagsApi, BkQueryApiKey } from '@/bookmarks/backend.api';
 
 interface TagInputProps {
   value: string[];
   onChange: (tags: string[]) => void;
-  fetchTags: () => Promise<Tag[]>;
   placeholder?: string;
   disabled?: boolean;
   autoFocus?: boolean;
@@ -16,31 +16,30 @@ interface TagInputProps {
 export default function TagInput({
   value,
   onChange,
-  fetchTags,
   placeholder = '输入标签，回车添加',
   disabled = false,
   autoFocus = false,
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
-  const [allTags, setAllTags] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load all existing tag names on mount
-  useEffect(() => {
-    fetchTags().then((tags) => setAllTags(tags.map((t) => t.name)));
-  }, [fetchTags]);
+  const { data: allTags } = useQuery({
+    queryKey: [BkQueryApiKey.TAGS],
+    queryFn: getAllTagsApi,
+  });
+
 
   // Filter suggestions: match input (case-insensitive), exclude already selected
   const filteredSuggestions = useMemo(() => {
     if (!inputValue.trim()) {
-      return allTags.filter((t) => !value.includes(t));
+      return allTags?.filter((t) => !value.includes(t.name)) || [];
     }
     const q = inputValue.toLowerCase();
-    return allTags.filter((t) => t.toLowerCase().includes(q) && !value.includes(t));
+    return allTags?.filter((t) => t.name.toLowerCase().includes(q) && !value.includes(t.name)) || [];
   }, [allTags, inputValue, value]);
 
   const addTag = useCallback(
@@ -74,7 +73,7 @@ export default function TagInput({
       if (e.key === 'Enter') {
         e.preventDefault();
         if (activeIdx >= 0 && activeIdx < filteredSuggestions.length) {
-          addTag(filteredSuggestions[activeIdx]);
+          addTag(filteredSuggestions[activeIdx].name);
         } else if (inputValue.trim()) {
           addTag(inputValue);
         }
@@ -178,18 +177,18 @@ export default function TagInput({
         >
           {filteredSuggestions.map((tag, i) => (
             <button
-              key={tag}
+              key={tag.name}
               type="button"
-              onClick={() => addTag(tag)}
+              onClick={() => addTag(tag.name)}
               onMouseEnter={() => setActiveIdx(i)}
               className={cn(
                 'inline-flex items-center px-2 py-1 text-xs rounded-md',
                 'transition-colors cursor-pointer',
                 i === activeIdx ? 'ring-2 ring-primary/40' : 'hover:bg-accent',
               )}
-              style={tagColor(tag)}
+              style={tagColor(tag.name)}
             >
-              {tag}
+              {tag.name}
             </button>
           ))}
         </div>

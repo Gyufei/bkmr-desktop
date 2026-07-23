@@ -1,26 +1,18 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { ExternalLink, Link, Code, Pencil, Trash2 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Button } from '@/components/ui/button';
 import EditBookmarkDialog from './EditBookmarkDialog';
 import { tagColor } from '../lib/tagColor';
 import { open } from '@tauri-apps/plugin-shell';
 import { invokeRecordBookmarkAccess } from '../lib/invoke';
-import type { Bookmark, Tag } from '../types';
+import type { Bookmark } from '../types';
+import DeleteBkDialog from './DeleteBkDialog';
 
 interface Props {
   bookmarks: Bookmark[];
@@ -28,14 +20,6 @@ interface Props {
   error: string | null;
   hasMore: boolean;
   onLoadMore: () => void;
-  onDeleteBookmark: (id: number) => void;
-  onUpdateBookmark: (
-    id: number,
-    title: string,
-    tags: string[],
-    description?: string,
-  ) => Promise<void>;
-  fetchTags: () => Promise<Tag[]>;
 }
 
 export default function ResultList({
@@ -44,11 +28,9 @@ export default function ResultList({
   error,
   hasMore,
   onLoadMore,
-  onDeleteBookmark,
-  onUpdateBookmark,
-  fetchTags,
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+
   const [deleteTarget, setDeleteTarget] = useState<Bookmark | null>(null);
   const [editTarget, setEditTarget] = useState<Bookmark | null>(null);
 
@@ -137,46 +119,14 @@ export default function ResultList({
         </ContextMenu>
       ))}
 
-      {/* Delete confirmation dialog */}
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
-              确定要删除书签「{deleteTarget?.title || deleteTarget?.url}」吗？此操作不可撤销。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleteTarget) {
-                  onDeleteBookmark(deleteTarget.id);
-                  setDeleteTarget(null);
-                }
-              }}
-            >
-              删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteBkDialog
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+      />
 
       <EditBookmarkDialog
-        bookmark={editTarget}
-        onOpenChange={(open) => {
-          if (!open) setEditTarget(null);
-        }}
-        onUpdate={onUpdateBookmark}
-        fetchTags={fetchTags}
+        editTarget={editTarget}
+        setEditTarget={setEditTarget}
       />
 
       {/* Sentinel for infinite scroll */}

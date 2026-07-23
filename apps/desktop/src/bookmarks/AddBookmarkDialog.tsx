@@ -12,42 +12,40 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import TagInput from '@/components/TagInput';
-import type { Tag } from '../types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addBookmarkApi, BkQueryApiKey } from './backend.api';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (url: string, title: string, tags: string[], description?: string) => Promise<void>;
-  fetchTags: () => Promise<Tag[]>;
 }
 
-export default function AddBookmarkDialog({ open, onOpenChange, onAdd, fetchTags }: Props) {
+export default function AddBookmarkDialog({ open, onOpenChange }: Props) {
+  const queryClient = useQueryClient();
+
+  const { mutate: handleAdd, isPending: isAdding, error: addError } = useMutation({
+    mutationFn: addBookmarkApi,
+    onSuccess: () => {
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: [BkQueryApiKey.ALL_BOOKMARKS, BkQueryApiKey.TAGS] });
+    },
+  });
+
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async () => {
     if (!url.trim()) return;
-    setSubmitting(true);
-    try {
-      await onAdd(url.trim(), title.trim(), tags, description.trim() || undefined);
-      setUrl('');
-      setTitle('');
-      setTags([]);
-      setDescription('');
-      onOpenChange(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }, [url, title, tags, description, onAdd, onOpenChange]);
+    handleAdd({ url: url.trim(), title: title.trim(), tags, description: description.trim() || undefined });
+  }, [url, title, tags, description, handleAdd]);
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!submitting) onOpenChange(v);
+        if (!isAdding) onOpenChange(v);
       }}
     >
       <DialogContent>
@@ -77,7 +75,7 @@ export default function AddBookmarkDialog({ open, onOpenChange, onAdd, fetchTags
           </div>
           <div className="space-y-2">
             <Label>标签（可选）</Label>
-            <TagInput value={tags} onChange={setTags} fetchTags={fetchTags} />
+            <TagInput value={tags} onChange={setTags} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">描述（可选）</Label>
@@ -89,12 +87,17 @@ export default function AddBookmarkDialog({ open, onOpenChange, onAdd, fetchTags
             />
           </div>
         </div>
+        {addError && (
+          <div className="text-destructive">
+            添加失败：{addError.message}
+          </div>
+        )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isAdding}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={!url.trim() || submitting}>
-            {submitting ? '添加中...' : '添加'}
+          <Button onClick={handleSubmit} disabled={!url.trim() || isAdding}>
+            {isAdding ? '添加中...' : '添加'}
           </Button>
         </DialogFooter>
       </DialogContent>
