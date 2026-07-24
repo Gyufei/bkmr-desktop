@@ -84,3 +84,20 @@ impl NoteWatcher {
 fn watcher_error(error: notify::Error) -> AppError {
     AppError::note_error("note_watcher_error", error.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::NoteWatcher;
+    use std::sync::Arc;
+
+    #[test]
+    fn missing_directory_returns_stable_watcher_error() {
+        let watcher = NoteWatcher::new(Arc::new(|_| {}));
+
+        let error = watcher
+            .watch("/definitely/missing/bkmrx-notes-directory")
+            .unwrap_err();
+
+        assert_eq!(error.code(), "note_watcher_error");
+    }
+}

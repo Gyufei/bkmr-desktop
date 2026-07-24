@@ -4,8 +4,8 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/nord.css';
 import { MilkdownCreapConfig } from './config';
 import { useMutation } from '@tanstack/react-query';
-import { readNoteContentApi, writeNoteContentApi } from './notes.api';
-import { NoteSaveQueue } from './note-save-queue';
+import { readNoteContentApi } from './notes.api';
+import { sharedNoteSaveQueue } from './note-save';
 
 interface Props {
   filePath: string;
@@ -38,17 +38,11 @@ export default function NoteEditor({ filePath }: Props) {
     isSuccess: isSaveSuccess,
     isPending: isSaving,
   } = useMutation({
-    mutationFn: writeNoteContentApi,
+    mutationFn: ({ path, content }: { path: string; content: string }) =>
+      sharedNoteSaveQueue.enqueue(path, content),
   });
-  const saveRef = useRef(save);
-  saveRef.current = save;
-  const saveQueueRef = useRef<NoteSaveQueue>();
-  if (!saveQueueRef.current) {
-    saveQueueRef.current = new NoteSaveQueue((path, content) => saveRef.current({ path, content }));
-  }
 
-  const enqueueSave = (path: string, content: string) =>
-    saveQueueRef.current!.enqueue(path, content);
+  const enqueueSave = (path: string, content: string) => save({ path, content });
 
   // 1. 核心保存逻辑：显式绑定保存时的 targetPath 与 targetContent
   const flushSave = (targetPath: string, content: string) => {
