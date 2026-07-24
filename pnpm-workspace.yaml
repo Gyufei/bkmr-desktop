@@ -1,4 +1,8 @@
+packages:
+  - apps/desktop
+
 allowBuilds:
   esbuild: true
+
 minimumReleaseAgeExclude:
   - prettier@3.9.6

@@ -1,0 +1,10 @@
+{
+  "name": "bkmrx-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter bkmrx dev",
+    "build": "pnpm --filter bkmrx build",
+    "test": "pnpm --filter bkmrx test",
+    "tauri": "pnpm --filter bkmrx tauri"
+  }
+}
