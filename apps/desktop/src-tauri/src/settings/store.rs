@@ -15,7 +15,10 @@ pub fn load(path: &Path) -> AppResult<Settings> {
     }
     let json = std::fs::read(path).map_err(settings_io_error)?;
     serde_json::from_slice(&json).map_err(|error| {
-        AppError::settings_error("settings_invalid", format!("failed to parse settings: {error}"))
+        AppError::settings_error(
+            "settings_invalid",
+            format!("failed to parse settings: {error}"),
+        )
     })
 }
 

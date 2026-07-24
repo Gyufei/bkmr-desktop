@@ -32,7 +32,10 @@ impl NoteWatcher {
 
     pub fn watch(&self, dir: &str) -> AppResult<()> {
         let root = PathBuf::from(dir);
-        let mut current = self.current.lock().unwrap_or_else(|error| error.into_inner());
+        let mut current = self
+            .current
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         if current
             .as_ref()
             .is_some_and(|(watched_dir, _)| watched_dir == &root)
@@ -71,7 +74,10 @@ impl NoteWatcher {
     }
 
     pub fn stop(&self) {
-        *self.current.lock().unwrap_or_else(|error| error.into_inner()) = None;
+        *self
+            .current
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = None;
     }
 }
 

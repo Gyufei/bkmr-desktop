@@ -180,9 +180,8 @@ function SettingsPage() {
               <div className="space-y-2 rounded-md border border-border p-3 text-xs">
                 <p className="font-medium">导入预检通过</p>
                 <p>
-                  共 {importCandidate.preview.total} 条；新增{' '}
-                  {importCandidate.preview.create_count}，更新{' '}
-                  {importCandidate.preview.update_count}，跳过{' '}
+                  共 {importCandidate.preview.total} 条；新增 {importCandidate.preview.create_count}
+                  ，更新 {importCandidate.preview.update_count}，跳过{' '}
                   {importCandidate.preview.skip_count}
                 </p>
                 <div className="flex gap-2">
@@ -232,10 +231,7 @@ function SettingsPage() {
                 onChange={(event) => setNotesDir(event.target.value)}
                 placeholder="输入 Obsidian 笔记目录路径"
               />
-              <Button
-                onClick={saveNotesDirectory}
-                disabled={updateMutation.isPending || !settings}
-              >
+              <Button onClick={saveNotesDirectory} disabled={updateMutation.isPending || !settings}>
                 保存
               </Button>
             </div>

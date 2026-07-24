@@ -13,9 +13,7 @@ fn service_round_trips_note_file_operations() {
     assert_eq!(service.read(&created).unwrap(), "# changed\n");
 
     let renamed = temp.path().join("two.md");
-    service
-        .rename(&created, renamed.to_str().unwrap())
-        .unwrap();
+    service.rename(&created, renamed.to_str().unwrap()).unwrap();
     service.delete(renamed.to_str().unwrap()).unwrap();
     assert!(!renamed.exists());
 }
@@ -34,7 +32,10 @@ fn scan_returns_nested_markdown_in_title_order() {
         .unwrap();
 
     assert_eq!(
-        notes.iter().map(|note| note.title.as_str()).collect::<Vec<_>>(),
+        notes
+            .iter()
+            .map(|note| note.title.as_str())
+            .collect::<Vec<_>>(),
         vec!["a", "b"]
     );
 }

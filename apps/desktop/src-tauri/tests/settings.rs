@@ -53,6 +53,9 @@ fn save_replaces_settings_without_leaving_temp_files() {
     )
     .unwrap();
 
-    assert_eq!(load(&path).unwrap().notes_dir.as_deref(), Some("/tmp/notes"));
+    assert_eq!(
+        load(&path).unwrap().notes_dir.as_deref(),
+        Some("/tmp/notes")
+    );
     assert_eq!(std::fs::read_dir(app_data.path()).unwrap().count(), 1);
 }

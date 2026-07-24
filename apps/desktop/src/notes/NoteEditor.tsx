@@ -22,7 +22,7 @@ function stripFrontmatter(content: string): string {
 export default function NoteEditor({ filePath }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const crepeRef = useRef<Crepe | null>(null);
-  
+
   // 记录当前编辑器绑定的文件路径和最新内容
   const currentPathRef = useRef(filePath);
   const latestContentRef = useRef<string>('');
@@ -38,15 +38,13 @@ export default function NoteEditor({ filePath }: Props) {
     isSuccess: isSaveSuccess,
     isPending: isSaving,
   } = useMutation({
-    mutationFn: writeNoteContentApi
+    mutationFn: writeNoteContentApi,
   });
   const saveRef = useRef(save);
   saveRef.current = save;
   const saveQueueRef = useRef<NoteSaveQueue>();
   if (!saveQueueRef.current) {
-    saveQueueRef.current = new NoteSaveQueue((path, content) =>
-      saveRef.current({ path, content }),
-    );
+    saveQueueRef.current = new NoteSaveQueue((path, content) => saveRef.current({ path, content }));
   }
 
   const enqueueSave = (path: string, content: string) =>
@@ -117,7 +115,7 @@ export default function NoteEditor({ filePath }: Props) {
             latestContentRef.current = md;
 
             // 闭包隔离：保存触发时，锁定当时传进来的 filePath！
-            const targetPath = filePath; 
+            const targetPath = filePath;
 
             if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
             saveTimerRef.current = setTimeout(() => {
@@ -155,15 +153,15 @@ export default function NoteEditor({ filePath }: Props) {
       // A. 如果上一个文件有还没到期的防抖保存，立刻强制冲刷保存落盘！
       const pendingContent = latestContentRef.current;
       const pathToSave = filePath; // 锁定旧文件路径
-      
+
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = undefined;
-        
+
         if (pendingContent) {
           // 异步写入旧文件
           enqueueSave(pathToSave, pendingContent).catch((e) =>
-            console.error('切换文件时自动保存旧文件失败:', e)
+            console.error('切换文件时自动保存旧文件失败:', e),
           );
         }
       }
@@ -191,9 +189,9 @@ export default function NoteEditor({ filePath }: Props) {
           加载失败
         </div>
       ) : null}
-      
+
       <div ref={containerRef} className="flex-1 overflow-y-auto thin-scrollbar" />
-      
+
       <div className="shrink-0 h-6 flex items-center justify-end gap-2 px-6 text-[11px] text-muted-foreground border-t border-border/50">
         {saveError ? (
           <span className="text-destructive flex items-center gap-1" title={saveError.message}>

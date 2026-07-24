@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    io,
-    path::Path,
-    time::UNIX_EPOCH,
-};
+use std::{fs, io, path::Path, time::UNIX_EPOCH};
 
 use super::NoteFile;
 
