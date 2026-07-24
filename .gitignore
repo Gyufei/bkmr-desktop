@@ -12,11 +12,3 @@ target/
 *.sqlite
 *.sqlite3
 *.app
-
-/app-backups/
-/migration-backups/
-/bkmr/
-/bkmr-scripts/
-/bkmrx/
-/bkmrx-chrome-ext/
-/sqlite:/

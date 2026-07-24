@@ -307,7 +307,7 @@ git -C /private/tmp/bkmrx-monorepo-rewrite-20260724 status --short
 ```
 
 Expected: only new root `docs/` paths appear. Imported desktop documentation
-remains under `apps/desktop/docs/`.
+remains under `docs/`.
 
 - [ ] **Step 3: Commit shared documentation**
 
