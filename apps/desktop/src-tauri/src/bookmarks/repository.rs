@@ -198,7 +198,7 @@ impl BookmarkRepository for SqliteBookmarkRepository {
                  FROM tags t
                  JOIN bookmark_tags bt ON bt.tag_id = t.id
                  GROUP BY t.id, t.name
-                 ORDER BY t.name",
+                 ORDER BY count(bt.bookmark_id) DESC, t.name ASC",
             )
             .map_err(database_error)?;
         let rows = statement

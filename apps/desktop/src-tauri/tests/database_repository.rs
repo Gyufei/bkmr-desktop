@@ -63,6 +63,29 @@ fn repository_create_round_trips_bookmark_and_tags() {
 }
 
 #[test]
+fn repository_get_tags_orders_by_count_descending_then_name_ascending() {
+    let (_, repository) = repository();
+
+    repository
+        .create(bookmark("https://example.com/one", &["beta", "gamma"]))
+        .unwrap();
+    repository
+        .create(bookmark("https://example.com/two", &["alpha", "gamma"]))
+        .unwrap();
+    repository
+        .create(bookmark("https://example.com/three", &["gamma"]))
+        .unwrap();
+
+    let tags = repository.get_tags().unwrap();
+    let ordered = tags
+        .iter()
+        .map(|tag| (tag.name.as_str(), tag.count))
+        .collect::<Vec<_>>();
+
+    assert_eq!(ordered, vec![("gamma", 3), ("alpha", 1), ("beta", 1)]);
+}
+
+#[test]
 fn repository_duplicate_url_returns_stable_conflict_code() {
     let (_, repository) = repository();
     repository
